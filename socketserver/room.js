@@ -22,15 +22,15 @@ var Room = function(socketServer, options){
 	var that = this;
 
 	this.roomInfo = extend(true, {
-		name: "",  				// Room name
-		slug: "",  				// Room name shorthand (no spaces, alphanumeric with dashes)
-		greet: "", 				// Room greetings
-		maxCon: 0,				// Max connections; 0 = unlimited
-		ownerEmail: '',         // Owner email for owner promotion
-		guestCanSeeChat: true, 	// Whether guests can see the chat or not
-		bannedCanSeeChat: true,	// Whether banned users can see the chat
-		chatID: 0,				// Default CID
-		roomOwnerUN: null,		// Username of the room owner to use with lobby API
+		name: "",  				             // Room name
+		slug: "",  				             // Room name shorthand (no spaces, alphanumeric with dashes)
+		greet: "", 				             // Room greetings
+		maxCon: 0,			               	 // Max connections; 0 = unlimited
+		ownerEmail: "",                      // Owner email for owner promotion
+		guestCanSeeChat: true, 	             // Whether guests can see the chat or not
+		bannedCanSeeChat: true,	             // Whether banned users can see the chat
+		chatID: 0,				             // Default CID
+		roomOwnerUN: null,		             // Username of the room owner to use with lobby API
 	}, options);
 
 	this.socketServer = socketServer;
@@ -55,7 +55,6 @@ var Room = function(socketServer, options){
 
 			data.bans = temp;
 		}
-
 		extend(true, that.data, data);
 
 		that.makeOwner();
@@ -76,14 +75,14 @@ Room.prototype.getRoomMeta = function(){
 
 Room.prototype.makeOwner = function(){
 	if (!this.roomInfo.ownerEmail) return;
-
 	var that = this;
 
 	DB.getUser(this.roomInfo.ownerEmail, function(err, data){
 		if (err) { console.log('Cannot make room owner: ' + err); return; }
 
-		if (typeof data.uid !== 'number') { console.log('Cannot make room owner: UserUIDError'); return; }
+		if (typeof data.uid !== 'number') { console.log('Cannot make room owner: UserUIDError'); return; 
 
+		log.info('Granting ' + data.un + ' (' + data.uid + ') Owner permissions');
 		// Remove user from other roles to avoid interesting bugs
 		for (var i in that.data.roles){
 			var ind = that.data.roles[i].indexOf(data.uid);
@@ -93,6 +92,7 @@ Room.prototype.makeOwner = function(){
 		// Only one owner, set entire array to one UID and set owner username for API
 		that.data.roles.owner = [ data.uid ];
 		that.data.roomOwnerUN = data.un;
+		that.roomInfo.roomOwnerUN = data.un;
 		that.save();
 	});
 };

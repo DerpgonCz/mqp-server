@@ -2,7 +2,7 @@ var fs = require('fs');
 var config = {};
 
 // IMPORTANT: In order to be able to launch the musiqpad server, set this to true
-config.setup = true;
+config.setup = false;
 
 /*
  Set this flag to false to disable web server hosting or true to enable web server hosting.
@@ -10,19 +10,22 @@ config.setup = true;
 
  If you are only hosting the socket and want musiqpad to host the frontend set this to false.
 */
-config.hostWebserver = true;
+config.hostWebserver = false;
 
 config.socketServer = {
-	host: '0.0.0.0',     // Host name or IP that the socket server is located at. Leave blank to bind to process IP address
-	port: '3076', // Leave blank to bind to process PORT
+	host: '',     // Host name or IP that the socket server is located at. Leave blank to bind to process IP address
+	port: '8082', // Leave blank to bind to process PORT
 };
 
 config.webServer = {
-	address: '0.0.0.0', // Leave blank to bind to process IP address
-	port: '3074' // Leave blank to bind to process PORT
+	address: '',			// Leave blank to bind to process IP address
+	port: '8080',			// Leave blank to bind to process PORT
+
+	redirectHTTP: false,	// Set to true if you want HTTP redirect to HTTPS.
+	redirectPort: '80'		// Required if setting above is true. Set to the port you want to redirect HTTP to HTTPS from (Default: 80).
 };
 
-config.useSSL = false;
+config.useSSL = true;
 
 config.certificate = {
 //	key: fs.readFileSync('../cert.key'),
@@ -30,70 +33,57 @@ config.certificate = {
 };
 
 config.room = {
-	name: 'FuechschenORG', // This is your pad name. It is shown as a user friendly description on the lounge and tab name.
-	slug: 'fuechschenorg', // Slugs are used to identify your pad when connecting to musiqpad! This slug must be unique and all in lowecase.
-	greet: 'Welcome to FuechschenORG.',
+	name: 'Pad Name', // This is your pad name. It is shown as a user friendly description on the lounge and tab name.
+	slug: 'this-is-your-slug', // Slugs are used to identify your pad when connecting to musiqpad! This slug must be unique and all in lowecase.
+	greet: 'Welcome to musiqpad!',
+	//bg: null, // Background image file path. Accepts external images. If this is undefined the default background will be used.
 	maxCon: 0,
-	ownerEmail: 'me@fuechschen.org', // This needs to be set, then the server restarted to take effect.
+	ownerEmail: 'pad.owner@self-hosted.com', // This needs to be set, then the server restarted to take effect.
 	guestCanSeeChat: true,
-	bannedCanSeeChat: true,
+	bannedCanSeeChat: false,
 	lastmsglimit: 6, // How many messages a user can see after joining.
 	signupcd: 0, // How many miliseconds the user cannot do certain things after they sign up.
 	allowemojis: true,
-	allowrecovery: true,
-	recaptcha: true,
-	twitterenabled: false,
-	tweetrandomness: 0.8,
+	allowrecovery: false,
+	recaptcha: false,
 	queue: {
 		cycle: true,
 		lock: false,
 		limit: 50,
 	},
 	history: {
-		limit_save: 10000,
+		limit_save: 0,
 		limit_send: 50,
 	},
 	email: {
-		confirmation: true, // Whether to force user to confirm his email address before he is able to do anything
-		sender: 'musiqpad@fuechschen.org',
-		options: {
-			auth: {
-				xoauth: true
-			}
-		},
+		confirmation: false, // Whether to force user to confirm his email address before he is able to do anything
+		sender: 'your@email.tld',
+		/*
+			description: Email server setup, please refer to https://github.com/nodemailer/nodemailer documention on what the options are, supports xOAuth 2.0
+			default: {}
+		*/
+		options: {},
 	},
 	description: '\
-				 <h1>FuechschenORG</h1>\
-				 Testing? Testing!!\
-				 \
-				 <h2>Rules</h2>\
-				 <p align="center">\
-				 <ul>\
-				 <li>1. Every genre is allowed to be played, however EDM is prefered.</li>\
-				 <li>2. Every has to be Safe for Work.</li>\
-				 <li>3. Be nice to each other. Nobody likes cunts or assholes.</li>\
-				 <li>4. Since this is still in beta-stage, the pad may crash or restart at any time. Lost spots in the waitlist won\'t necesarily be restored</li>\
-				 <li>5. Don\'t not ask for ranks, skips or moves. However, if you like to be swapped with another person, the person in the front can ask for a swap.</li>\
-				 <li>6. Please use english in chat so everyone can understand you.</li>\
-				 </ul>\
-				 </p>\
+				 <h1>Pad Description</h1>\
+				 Here you can put anything you want in HTML!\
 				 ',
 };
 
 config.apis = {
 	YT: {
-		key: 'AIzaSyDxrJm1MJNr-ig3B8AN7ugOn12Xto7FMwM', // Required api key in order for YouTube search to work.
+		key: '', // Required api key in order for YouTube search to work.
 		restrictSearchToMusic: false,
 	},
 	SC: {
-		key: '16e7da3e6d4700c7b4b6b65b4cc578fd',
+		key: '',
 	},
 	reCaptcha: {
-		key: '6LdzDxoTAAAAAHIcl3wwBsSUdwC3_VTrXx4Kv-yo',
-		secret: '6LdzDxoTAAAAACT-8cpMlu2lvuLoa5Rs48dfDCGk',
+		key: '',
+		secret: '',
 	},
 	musiqpad: {
-		key: '05545608-28e7-d4ed-5716-aa0857655a2d', // This is required in order for your socket to update the musiqpad lounge. Request an API Key here: https://musiqpad.com/lounge
+		key: '', // This is required in order for your socket to update the musiqpad lounge. Request an API Key here: https://musiqpad.com/lounge
 		sendLobbyStats: true,
 	},
 };
@@ -104,12 +94,12 @@ config.loginExpire = 7;
 
 // Database config
 config.db = {
-	dbType: 		'mysql',   				// Values "level" for LevelDB and "mysql" for MySQL
+	dbType: 		'level',   				// Values "level" for LevelDB and "mysql" for MySQL
 	dbDir: 			'./socketserver/db',	// Only used for LevelDB. Directory to save databases.  Default is ./socketserver/db
-	mysqlUser: 		'musiqpad',     				// Only used for MySQL.  Database username
-	mysqlPassword: 	'2AK13e878efAKI23GuPi13qi6uz6J1', 					// Only used for MySQL.  Database password
-	mysqlHost: 		'hoellenfuchs.fuechschen.org',  					// Only used for MySQL.  Host address
-	mysqlDatabase: 	'musiqpad' 					// Only used for MySQL.  Database being used
+	mysqlUser: 		'',     				// Only used for MySQL.  Database username
+	mysqlPassword: 	'', 					// Only used for MySQL.  Database password
+	mysqlHost: 		'',  					// Only used for MySQL.  Host address
+	mysqlDatabase: 	'', 					// Only used for MySQL.  Database being used
 };
 
 /*
@@ -137,6 +127,7 @@ config.db = {
 	'room.grantroles': Ability to change user roles (requires canGrantPerms property)
 	'room.banUser': Ability to ban and unban users
 	'room.ratelimit.bypass': Will bypass ratelimit
+    'room.whois': Possibility to request additional information about a user
 
 	NOTE: Changing the PROPERTY NAME will break role assignments.  Title can be changed
 	without breaking things, but property name must stay the same.
@@ -144,12 +135,12 @@ config.db = {
 
 // Defines the order that roles will appear on the user list
 // PROPERTY names.  NOT title. (case-sensitive)
-config.roleOrder = ['owner', 'coowner', 'dev', 'bot', 'supervisor', 'regular', 'default'];
+config.roleOrder = ['dev', 'owner', 'coowner', 'supervisor', 'bot', 'regular', 'default'];
 
 
 // Defines which roles are 'staff' members
 // PROPERTY names.  NOT title. (case-sensitive)
-config.staffRoles = ['owner', 'coowner', 'supervisor', 'bot', 'resident'];
+config.staffRoles = ['dev', 'owner', 'coowner', 'supervisor', 'bot'];
 
 
 /*
@@ -173,17 +164,12 @@ Below are a list of roles we suggest using.
 // Defines roles and permissions
 config.roles = {
 	owner: { // REQUIRED ROLE
-		title: 'Host',
+		title: 'Owner',
 		showtitle: true,
-		badge: 'chevron-double-up',
 		style: {
 			'color': '#F46B40'
 		},
 		permissions: [
-			'pad.restart',
-			'tweet.toggle',
-			'tweet.send',
-			'reload.force',
 			'djqueue.join',
 			'djqueue.joinlocked',
 			'djqueue.leave',
@@ -208,6 +194,7 @@ config.roles = {
 			'room.grantroles',
 			'room.banUser',
 			'room.ratelimit.bypass',
+            'room.whois',
 		],
 		canGrantRoles: [
 			'dev',
@@ -215,15 +202,12 @@ config.roles = {
 			'supervisor',
 			'bot',
 			'regular',
-			'resident',
 			'default',
-			'ncs_dev'
 		],
 	},
 	dev: { // OPTIONAL ROLE - FOR MUSIQPAD DEVELOPERS
 		title: 'Dev',
 		showtitle: true,
-		badge: 'source-pull',
 		style: {
 			'color': '#A77DC2'
 		},
@@ -232,6 +216,11 @@ config.roles = {
 			'djqueue.joinlocked',
 			'djqueue.leave',
 			'djqueue.skip.self',
+			'djqueue.skip.other',
+			'djqueue.lock',
+			'djqueue.cycle',
+			'djqueue.limit',
+			'djqueue.move',
 			'djqueue.playLiveVideos',
 			'chat.send',
 			'chat.private',
@@ -244,10 +233,19 @@ config.roles = {
 			'playlist.rename',
 			'playlist.import',
 			'playlist.shuffle',
+			'room.grantroles',
 			'room.banUser',
 			'room.ratelimit.bypass',
+            'room.whois',
 		],
-		canGrantRoles: [],
+		canGrantRoles: [
+			'dev',
+			'coowner',
+			'supervisor',
+			'bot',
+			'regular',
+			'default'
+		],
 		mention: 'devs',
 	},
 	coowner: {
@@ -281,19 +279,18 @@ config.roles = {
 			'room.grantroles',
 			'room.banUser',
 			'room.ratelimit.bypass',
+            'room.whois',
 		],
 		canGrantRoles: [
 			'supervisor',
 			'bot',
 			'regular',
-			'resident',
 			'default',
 		],
 	},
 	supervisor: {
-		title: 'Staff',
+		title: 'Supervisor',
 		showtitle: true,
-		badge: 'chevron-up',
 		style: {
 			'color': '#009CDD'
 		},
@@ -320,96 +317,51 @@ config.roles = {
 			'room.grantroles',
 			'room.banUser',
 			'room.ratelimit.bypass',
+            'room.whois',
 		],
 		canGrantRoles: [
 			'regular',
 			'default'
 		],
-	},
-	resident: {
-		title: 'RDj',
-		showtitle: true,
-		badge: 'music-note',
-		style: {
-			'color': 'purple'
-		},
-		permissions: [
-			'djqueue.join',
-			'djqueue.joinlocked',
-			'djqueue.leave',
-			'chat.send',
-			'djqueue.skip.self',
-			'playlist.create',
-			'playlist.delete',
-			'playlist.rename',
-			'playlist.import',
-			'room.ratelimit.bypass'
-		],
-		canGrantRoles: [],
-	},
-	ncs_dev: {
-		title: 'NCS-Dev',
-		showtitle: true,
-		badge: 'folder-account',
-		style: {
-			'color': '#81DAF5'
-		},
-		permissions: [
-			'djqueue.join',
-			'djqueue.joinlocked',
-			'djqueue.leave',
-			'chat.send',
-			'djqueue.skip.self',
-			'playlist.create',
-			'playlist.delete',
-			'playlist.rename',
-			'playlist.import',
-			'room.ratelimit.bypass'
-		],
-		canGrantRoles: [],
 	},
 	bot: {
 		title: 'Bot',
 		showtitle: true,
 		badge: 'android',
 		style: {
-			'color': 'red'
+			'color': '#964B74'
+		},
+		permissions: [
+			'djqueue.skip.other',
+			'djqueue.lock',
+			'djqueue.cycle',
+			'djqueue.move',
+			'chat.send',
+			'chat.delete',
+			'chat.specialMention',
+			'room.banUser',
+			'room.ratelimit.bypass',
+		],
+		canGrantRoles: [],
+	},
+	regular: {
+		title: 'Regular',
+		showtitle: false,
+		style: {
+			'color': '#925AFF'
 		},
 		permissions: [
 			'djqueue.join',
 			'djqueue.joinlocked',
 			'djqueue.leave',
-			'djqueue.skip.self',
-			'djqueue.skip.other',
-			'djqueue.lock',
-			'djqueue.cycle',
-			'djqueue.limit',
-			'djqueue.move',
-			'djqueue.playLiveVideos',
 			'chat.send',
-			'chat.private',
-			'chat.broadcast',
-			'chat.delete',
-			'chat.specialMention',
-			'chat.staff',
+			'djqueue.skip.self',
 			'playlist.create',
 			'playlist.delete',
 			'playlist.rename',
 			'playlist.import',
-			'playlist.shuffle',
-			'room.grantroles',
-			'room.banUser',
-			'room.ratelimit.bypass'
 		],
-		canGrantRoles: [
-			'dev',
-			'coowner',
-			'supervisor',
-			'resident',
-			'ncs_dev',
-			'regular',
-			'default'
-		],
+		canGrantRoles: [],
 	},
 	default: { // REQUIRED ROLE
 		title: 'Default',

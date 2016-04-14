@@ -38,6 +38,7 @@
 				<input id="r-email" name="email" type="text" autofocus placeholder="E-mail" />
             	<input id="r-username" name="username" type="text" placeholder="Username" />
             	<input id="r-password" name="password" type="password" placeholder="Password" />
+            	<input id="r-confirm" name="confirm" type="password" placeholder="Confirm password" />
             	<div id="recaptcha"></div>
             	<div class="creds-controls"><div class="ctrl">Register</div></div>
 			</form>
@@ -135,6 +136,11 @@
 						<span>Mention sound</span>
 						<br>
 						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.globalMention" id="set-input-mention-global" name="check" />
+						</label>
+						<span>Global mentions</span>
+						<br>
+						<label class="set-check">
 							<input type="checkbox" ng-model="roomSettings.leaveConfirmation" id="set-input-leave-alert" name="check" />
 						</label>
 						<span>Leave confirmation</span>
@@ -159,6 +165,12 @@
 							<input type="checkbox" ng-model="roomSettings.emojis.betterttv" id="set-input-emojis-betterttv" name="check" />
 						</label>
 						<span>Enable BetterTTV emojis</span>
+						<br>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.shortcuts" id="set-input-shortcuts" name="check" />
+						</label>
+						<span>Key shortcuts</span>
 						<br>
 						<br>
 						<input class="set-text form-control" ng-model="roomSettings.chatlimit">

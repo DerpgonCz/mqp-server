@@ -18,6 +18,7 @@ var pool = null;
 
 var MysqlDB = function(){
 	var that = this;
+
 	var mysqlConfig = {
 		host: config.db.mysqlHost,
 		user: config.db.mysqlUser,
@@ -25,6 +26,7 @@ var MysqlDB = function(){
 		database: config.db.mysqlDatabase,
 		charset: "UTF8_GENERAL_CI",
 		multipleStatements: true,
+		connectionLimit: 1,
 	};
 
 	if (!db){
@@ -55,7 +57,7 @@ var MysqlDB = function(){
 					);\
 					\
 					CREATE TABLE IF NOT EXISTS `playlists` (\
-					    `id` INTEGER UNSIGNED NULL AUTO_INCREMENT DEFAULT NULL,\
+					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
 					    `owner` INTEGER UNSIGNED NULL DEFAULT NULL,\
 					    `owner_old` INTEGER UNSIGNED NULL DEFAULT NULL,\
 					    `name` VARCHAR(32) NOT NULL DEFAULT 'NULL',\
@@ -87,7 +89,7 @@ var MysqlDB = function(){
                     );\
 					\
 					CREATE TABLE IF NOT EXISTS `chat` (\
-					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT DEFAULT NULL,\
+					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
 					    `msg` VARCHAR(256) NOT NULL DEFAULT 'NULL',\
 					    `uid` INTEGER UNSIGNED NULL DEFAULT NULL,\
 					    PRIMARY KEY (`id`)\
@@ -108,7 +110,7 @@ var MysqlDB = function(){
                     \
                     CREATE TABLE IF NOT EXISTS `bans` (\
                         `slug` VARCHAR(32),\
-                        `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT DEFAULT NULL,\
+                        `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
                         `uid` INT(11) NOT NULL,\
                         `uid_by` INT(11) NOT NULL,\
                         `reason` VARCHAR(256) NULL,\
@@ -120,6 +122,7 @@ var MysqlDB = function(){
 					UPDATE `users` SET `lastdj` = false;\
 				", null, function(err, res){
 					if(err) throw new Error(err);
+					pool.config.connectionLimit = 5;
 				});
 			}
 		});
@@ -671,8 +674,7 @@ MysqlDB.prototype.getUserByName = function(name, opts, callback) {
         callback = opts;
         opts = {};
     }
-
-    this.execute("SELECT `id`, `email` FROM `users` WHERE ?;", { username: name, }, function(err, res){
+    this.execute("SELECT `id`, `email` FROM `users` WHERE ?;", { un: name, }, function(err, res){
        if(err || res.length == 0) callback('UserNotFound');
        else {
            that.getUserNoLogin(res[0].id, function(err, data) {
