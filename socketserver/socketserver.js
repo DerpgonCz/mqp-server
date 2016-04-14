@@ -5,6 +5,14 @@ var https = require('https');
 var Duration = require('durationjs');
 var request = require('request');
 var util = require('util');
+var pm2 = require('pm2');
+var Twitter = require('twitter');
+tclient = new Twitter({
+	consumer_key: 'lu8IzgnHcmalO1JKHdkctc2Lo',
+	consumer_secret: 'CA8Kh6VNRCSmzfRjVkGtwIJQCG3p1aEoIx31gnVflyv7RB8Q78',
+	access_token_key: '711335500351717376-vmndYsacOnBak6uWGgVbg42A64goQSF',
+	access_token_secret: 'cl9XqoGWpxXU3f2tjh0VhV7BxkChPrGH00Wr9O1mF8XnE'
+});
 
 //Files
 var config = require('../serverconfig');
@@ -17,6 +25,8 @@ var Roles = require('./role');
 var Hash = require('./hash');
 var log = new (require('basic-logger'))({showTimestamp: true, prefix: "SocketServer"});
 var WebSocketServer = ws.Server;
+
+twitterenabled = config.room.twitterenabled;
 
 
 ws.prototype.sendJSON = function(obj){ 
@@ -354,6 +364,55 @@ var SocketServer = function(server){
 			}
 
 			switch(data.type){
+				case 'padRestart':
+
+					if(Roles.checkPermission(socket.user.role, 'pad.restart')){
+						pm2.connect(function (err) {
+							if(!err){
+								that.room.sendBroadcastMessage('This pad will now perform a restart. We will be back in a few seconds.');
+								setTimeout(function () {
+									pm2.restart('musqpad');
+								}, 3 * 1000);
+							}
+						});
+					}
+
+					break;
+
+				case 'tweetSend':
+
+					if(Roles.checkPermission(socket.user.role, 'tweet.send')){
+						tclient.post('statuses/update', {status: data.data.msg}, function (err) {
+							if(err) {
+								socket.sendJSON({type: 'systemMessage', data: 'Tweet failed'});
+								console.log(err);
+							}
+							else socket.sendJSON({type: 'systemMessage', data: 'Tweet success'});
+						});
+					}
+
+					break;
+				
+				case 'twitterToggle':
+					if(Roles.checkPermission(socket.user.role, 'tweet.toggle')){
+						twitterenabled = data.data.val;
+						if(data.data.val === true){
+							socket.sendJSON({type: 'systemMessage', data: 'Twitter enabled'});
+						} else {
+							socket.sendJSON({type: 'systemMessage', data: 'Twitter disabled'});
+						}
+					}
+
+					break;
+
+				case 'forceReload':
+
+					if(Roles.checkPermission(socket.user.role, 'reload.force')){
+						that.room.sendAll({type: 'forceReload'});
+					}
+
+					break;
+
 				case 'confirmation':
 					/*
 				    Expected input object: 

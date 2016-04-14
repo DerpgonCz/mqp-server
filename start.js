@@ -23,7 +23,7 @@ var webConfig = '// THIS IS AN AUTOMATICALLY GENERATED FILE\n\nvar config=JSON.p
 	) + '\')';
 
 if (config.hostWebserver){
-	fs.writeFile('./webserver/public/lib/js/webconfig.js', webConfig);
+	//fs.writeFile('./webserver/public/lib/js/webconfig.js', webConfig);
 	// but works to me with fs.writeFile('./webserver/public/lib/js/'+config.room.slug+'-config.js', webConfig); --> caipira
 	var webserver = require('./webserver/app');
 	server = (config.socketServer.port == config.webServer.port || config.socketServer.port == '') ? webserver.server : null;

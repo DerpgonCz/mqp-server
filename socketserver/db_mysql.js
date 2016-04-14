@@ -18,7 +18,7 @@ var pool = null;
 
 var MysqlDB = function(){
 	var that = this;
-	var mysqlConfig = { 
+	var mysqlConfig = {
 		host: config.db.mysqlHost,
 		user: config.db.mysqlUser,
 		password: config.db.mysqlPassword,
@@ -26,11 +26,11 @@ var MysqlDB = function(){
 		charset: "UTF8_GENERAL_CI",
 		multipleStatements: true,
 	};
-	
+
 	if (!db){
 		pool = mysql.createPool(mysqlConfig);
 		db = mysql.createConnection(mysqlConfig);
-		
+
 		db.connect(function(err) {
 			if(err) {
 				log.error(err);
@@ -38,7 +38,7 @@ var MysqlDB = function(){
 				that.execute("\
 					CREATE TABLE IF NOT EXISTS `users` (\
 					    `id` INTEGER UNSIGNED NULL AUTO_INCREMENT DEFAULT NULL,\
-					    `email` VARCHAR(254) UNIQUE NOT NULL DEFAULT 'NULL',\
+					    `email` VARCHAR(191) UNIQUE NOT NULL DEFAULT 'NULL',\
 					    `un` VARCHAR(20) UNIQUE NOT NULL DEFAULT 'NULL',\
 					    `pw` VARCHAR(32) NOT NULL DEFAULT 'NULL',\
 					    `salt` VARCHAR(10),\
@@ -94,7 +94,7 @@ var MysqlDB = function(){
 					);\
 					\
 					CREATE TABLE IF NOT EXISTS `tokens` (\
-						`email` VARCHAR(254) NOT NULL,\
+						`email` VARCHAR(191) NOT NULL,\
 						`token` VARCHAR(32) NOT NULL,\
 						`created` DATETIME NOT NULL,\
 						PRIMARY KEY (`email`)\
@@ -123,7 +123,7 @@ var MysqlDB = function(){
 				});
 			}
 		});
-		
+
 		db.on('error', function(err) {
 			// Log
 			if(err.code === 'PROTOCOL_CONNECTION_LOST') {
@@ -138,13 +138,13 @@ var MysqlDB = function(){
 
 MysqlDB.prototype.execute = function(query, vars, callback) {
 	callback = callback || function(){};
-	
+
 	pool.getConnection(function(err, con){
 		if (err){
 			callback(err);
 			return;
 		}
-		
+
 		con.query(query, vars, function(err, rows){
 			callback(err, rows);
 			con.release();
@@ -155,7 +155,7 @@ MysqlDB.prototype.execute = function(query, vars, callback) {
 //PlaylistDB
 MysqlDB.prototype.getPlaylist = function(pid, callback) {
     var that = this;
-    
+
     var Playlist = require('./playlist');
 
     that.execute("SELECT `name`, `created`, `owner` FROM `playlists` WHERE ?", { id: pid, }, function(err, data) {
@@ -180,18 +180,18 @@ MysqlDB.prototype.getPlaylist = function(pid, callback) {
 
 MysqlDB.prototype.createPlaylist = function(owner, name, callback) {
 	name = name.substr(0, 100);
-	
+
     var Playlist = require('./playlist');
     var pl = new Playlist();
     pl.data.owner = owner;
     pl.data.created = new Date();
     pl.data.name = name;
-    
+
 	this.execute("INSERT INTO `playlists` SET ?;", { owner: owner, name: name, created: pl.data.created, }, function(err, res){
 		if(err) { callback(err); return; }
-		
+
 		pl.id = res.insertId;
-		
+
 	    callback(null, pl);
 	});
 };
@@ -202,21 +202,21 @@ MysqlDB.prototype.deletePlaylist = function(pid, callback) {
 
 MysqlDB.prototype.putPlaylist = function(pid, data, callback) {
     var that = this;
-    
+
 	var toSave = [];
-	
+
 	//TODO: Content type support
-	
+
 	for(var ind in data.content){
 		toSave.push([ pid, data.content[ind], ind ]);
 	}
-	
+
 	this.execute("UPDATE `playlists` SET ? WHERE ?;", [{ name: data.name, }, { id: pid, }], function(err, data) {
 	    if(err){ callback(err); return; }
-	    
+
 	    that.execute("DELETE FROM `media` WHERE ?; INSERT INTO `media`(??) VALUES ?;", [{ pid: pid, }, [ 'pid', 'cid', 'sort' ], toSave], function(err, data) {
             if(err){ callback(err); return; }
-            
+
             callback(null, data);
         });
 	});
@@ -225,24 +225,24 @@ MysqlDB.prototype.putPlaylist = function(pid, data, callback) {
 //RoomDB
 MysqlDB.prototype.getRoom = function(slug, callback) {
     var that = this;
-    
+
     var out = {
         roles: {},
         bans: {},
         history: [],
     }
-    
+
     this.execute("SELECT `role`, `uid` FROM `roles` WHERE ?;", { slug: slug, }, function(err, res) {
         if(err) { callback(err); return; }
-       
+
         for(var ind in res){
             out.roles[res[ind].role] = out.roles[res[ind].role] || [];
             out.roles[res[ind].role].push(res[ind].uid);
         }
-       
+
         that.execute("SELECT `uid`, `uid_by`, `reason`, UNIX_TIMESTAMP(`start`), UNIX_TIMESTAMP(`end`), (SELECT `role` FROM `roles` WHERE `roles`.`uid` = `bans`.`uid_by` AND ?) as `role` FROM `bans` WHERE ?;", [ { slug: slug, }, { slug: slug, } ], function(err, res) {
             if(err) { callback(err); return; }
-            
+
             for(var ind in res){
                 var obj = res[ind];
                 out.bans[obj.uid] = {
@@ -256,7 +256,7 @@ MysqlDB.prototype.getRoom = function(slug, callback) {
                     }
                 }
             }
-            
+
             that.execute("\
             SELECT\
                 `history`.`cid`, UNIX_TIMESTAMP(`history`.`start`) as `start`, `history`.`title`, `history`.`duration`, `history`.`like`, `history`.`grab`, `history`.`dislike`,\
@@ -310,7 +310,7 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
     var that = this;
 
     var outRoles = [], outBans = [], outHistory = [];
-    
+
     for(var key in val.roles){
         for(var ind in val.roles[key])
             outRoles.push([ slug, val.roles[key][ind], key ]);
@@ -323,10 +323,10 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
         var obj = val.history[ind];
         outHistory.push([ slug, obj.user.uid, obj.song.cid, new Date(obj.start), obj.song.duration, obj.song.title, obj.votes.like, obj.votes.grab, obj.votes.dislike ]);
     }
-    
+
     var query = "DELETE FROM `roles` WHERE ?; DELETE FROM `bans` WHERE ?;DELETE FROM `history` WHERE ?;";
     var params = [{ slug: slug, }, { slug: slug, }, { slug: slug, }];
-    
+
     if(outRoles.length){
         query += "INSERT INTO `roles`(??) VALUES ?;";
         params.push([ 'slug', 'uid', 'role' ], outRoles);
@@ -339,9 +339,9 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
         query += "INSERT INTO `history`(??) VALUES ?;";
         params.push([ 'slug', 'dj', 'cid', 'start', 'duration', 'title', 'like', 'grab', 'dislike' ], outHistory);
     }
-    
+
     that.execute(query, params, callback);
-    
+
     return that;
 };
 
@@ -364,7 +364,7 @@ MysqlDB.prototype.isTokenValid = function(tok, callback) {
             callback('InvalidToken');
             return;
         }
-        
+
         callback(null, res[0].email);
     });
 };
@@ -372,12 +372,12 @@ MysqlDB.prototype.isTokenValid = function(tok, callback) {
 //UserDB
 MysqlDB.prototype.getUserNoLogin = function(uid, callback){
     var that = this;
-    
+
 	var User = require('./user');
-	
+
 	this.execute("SELECT `salt`, `lastdj`, `uptime`, `recovery`, UNIX_TIMESTAMP(`recovery_timeout`) as `recovery_timeout`, `confirmation`, `badge_top`, `badge_bottom`, UNIX_TIMESTAMP(`created`) as `created`, `activepl`, `pw`, `un`, `id` FROM `users` WHERE ?", { id: uid, }, function(err, res){
         if (err || res.length == 0) { callback('UserNotFound'); return; }
-        
+
         res = res[0];
         var data = {
             lastdj: res.lastdj ? true : false,
@@ -401,10 +401,10 @@ MysqlDB.prototype.getUserNoLogin = function(uid, callback){
         }
 
         that.execute("SELECT `id` FROM `playlists` WHERE `owner` = ?;", [ uid ], function(err, res) {
-            
+
             for(var ind in res)
                 data.playlists.push(res[ind].id);
-                
+
             callback(null, data);
         });
 	});
@@ -444,7 +444,7 @@ MysqlDB.prototype.createUser = function(obj, callback) {
         callback('PasswordBlank');
         return;
     }
-    
+
     //Check for existing username
     this.usernameExists(inData.un, function(err, res){
         if(err || res) callback('UsernameExists');
@@ -455,26 +455,26 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                     if (callback) callback('AccountExists');
                     return;
                 }
-        
+
                 var user = new User();
-        
+
                 user.data.un = inData.un;
                 user.data.salt = DBUtils.makePass(Date.now()).slice(0, 10);
                 user.data.pw = DBUtils.makePass(inData.pw, user.data.salt);
                 user.data.created = Date.now();
                 if (config.room.email.confirmation) user.data.confirmation = DBUtils.makePass(Date.now());
                 var updatedUserObj = user.makeDbObj();
-        
+
                 var tok = that.createToken(inData.email);
-                
+
                 delete updatedUserObj.uid;
-        
+
                 that.putUser(inData.email, updatedUserObj, function(err, id) {
                     if (err) {
                         callback(err);
                         return;
                     }
-        
+
                     //Send confirmation email
                     if (config.room.email.confirmation) {
                         Mailer.sendEmail('signup', {
@@ -484,7 +484,7 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                             console.log(data);
                         });
                     }
-                    
+
                     //Login user
                     user.data.uid = id;
                     user.login(inData.email);
@@ -517,13 +517,13 @@ MysqlDB.prototype.loginUser = function(obj, callback) {
                         callback('IncorrectPassword');
                         return;
                     }
-                    
+
                     var tok = that.createToken(inData.email);
-                    
+
                     var user = new User();
 
                     user.login(inData.email, data, function() {
-                        
+
                         callback(null, user, tok);
                     });
                 });
@@ -543,7 +543,7 @@ MysqlDB.prototype.loginUser = function(obj, callback) {
                         var user = new User();
 
                         user.login(email, data, function() {
-                            
+
                             callback(null, user);
                         });
                     });
@@ -557,10 +557,10 @@ MysqlDB.prototype.loginUser = function(obj, callback) {
 
 MysqlDB.prototype.putUser = function(email, data, callback) {
     callback = callback || function(){};
-    
+
     var newData = {};
     util._extend(newData, data);
-    
+
     newData.badge_bottom = newData.badge.bottom;
     newData.badge_top = newData.badge.top;
     newData.recovery_timeout = new Date(newData.recovery.timeout);
@@ -579,9 +579,9 @@ MysqlDB.prototype.putUser = function(email, data, callback) {
 
 MysqlDB.prototype.getUser = function(email, callback){
     var that = this;
-    
+
     var User = require('./user');
-    
+
     this.execute("SELECT `id` FROM `users` WHERE ?;", { email: email, }, function(err, res) {
         if(err || res.length == 0){
             callback('UserNotFound');
@@ -595,7 +595,7 @@ MysqlDB.prototype.getUser = function(email, callback){
                     user.login(email, data, function(){
 
             		    callback(null, user);
-        		    }); 
+        		    });
                 }
             });
         }
@@ -608,7 +608,7 @@ MysqlDB.prototype.deleteUser = function(email, callback){
 
 MysqlDB.prototype.getUserByUid = function(uid, opts, callback) {
     var that = this;
-    
+
     if (typeof opts === 'function') {
         callback = opts;
         opts = {};
@@ -622,9 +622,9 @@ MysqlDB.prototype.getUserByUid = function(uid, opts, callback) {
             return;
         }
     }
-    
+
     var User = require('./user');
-    
+
     if(Array.isArray(uid)){
         var out = {};
         var initialized = 0;
@@ -633,7 +633,7 @@ MysqlDB.prototype.getUserByUid = function(uid, opts, callback) {
             if(err || res.length == 0){
                 callback('SomeUsersNotFound', out);
             }
-            
+
             res.forEach(function(e){
                that.getUserNoLogin(e.id, function(err, data) {
                     var user = new User();
@@ -646,7 +646,7 @@ MysqlDB.prototype.getUserByUid = function(uid, opts, callback) {
                             else callback('SomeUsersNotFound', out);
                         }
                     });
-                }); 
+                });
             });
         })
     } else {
@@ -664,14 +664,14 @@ MysqlDB.prototype.getUserByUid = function(uid, opts, callback) {
 
 MysqlDB.prototype.getUserByName = function(name, opts, callback) {
     var that = this;
-    
+
     var User = require('./user');
 
     if (typeof opts === 'function') {
         callback = opts;
         opts = {};
     }
-    
+
     this.execute("SELECT `id`, `email` FROM `users` WHERE ?;", { username: name, }, function(err, res){
        if(err || res.length == 0) callback('UserNotFound');
        else {

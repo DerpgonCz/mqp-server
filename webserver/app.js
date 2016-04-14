@@ -5,7 +5,7 @@ var https = require('https');
 var fs = require('fs');
 var config = require('../serverconfig.js');
 
-// CSS requires 
+// CSS requires
 var less = require('less');
 var cleancss = (new (require('clean-css')));
 
@@ -15,7 +15,7 @@ var server = null;
 var socketServer = null;
 
 if (config.certificate && config.certificate.key && config.certificate.cert){
-  server = https.createServer(config.certificate, app);	
+  server = https.createServer(config.certificate, app);
 }else{
 	server = http.createServer(app);
 }
@@ -37,7 +37,11 @@ if (config.certificate && config.certificate.key && config.certificate.cert){
 app.use(express.static(path.resolve(__dirname, 'public')));
 app.use('/pads', express.static(path.resolve(__dirname, 'public')));
 app.get('/config', function(req, res) {
-    res.send(fs.readFileSync(__dirname + '/public/lib/js/webconfig.js'));
+    res.type('application/javascript');
+    res.send('var config=JSON.parse(\'{"useSSL":false,"serverPort":"3076","selfHosted":true}\')');
+});
+app.get('/lounge', function(req, res){
+  res.sendFile(__dirname + '/public/lounge.html');
 });
 app.get('/api/room', function(req,res){
   var roomInfo = {

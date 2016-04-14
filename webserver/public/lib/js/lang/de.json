@@ -1,0 +1,17 @@
+{
+	chat: {
+
+	},
+	errors: {
+		NotLoggedIn: "Du musst eingeloggt sein um das zu tun!",
+		UserBanned: "Du bist gebannt!",
+		NotInPad: "Dir ist es nicht erlaubt, dies außerhalb eines Pads zu machen.",
+		UserNotInpad: "Dieser Benutzer ist derzeit in keinem Pad.",
+		InsufficientPermissions: "Du hast dazu keine Berechtigung.",
+		CannotJoinQueueWithoutPlaylist: "Du kannst die Warteliste nicht ohne Playlist betreten.",
+		CannotJoinQueueWithEmptyPlaylist: "Du kannst die Warteliste nicht mit einer lerren Playlist betreten.",
+		CannotJoinInQueue: "Du kannst der Wartelist gerade nicht beitreten.",
+		CannotLeaveQueue: "Du kannst die Warteliste gerade nicht verlassen.",
+		PropsMissing: "Dir fehlen da einige Argumente.",
+	},
+}
