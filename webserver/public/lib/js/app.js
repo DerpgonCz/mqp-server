@@ -4559,7 +4559,8 @@
                 BROADCAST_MESSAGE: 'broadcastMessage',
                 SERVER_RESPONSE: 'response',
                 PRIVATE_MESSAGE: 'privateMessage',
-                CHAT_COMMAND: 'chatCommand'
+                CHAT_COMMAND: 'chatCommand',
+                FORCE_RELOAD: 'forceReload'
             }
         },
         test: function(){ console.log(MP.user.playlists); },
@@ -4977,6 +4978,10 @@
 
                 case API.DATA.EVENTS.SERVER_RESPONSE:
                     if (data.id) MP.callCallback(data);
+                    break;
+
+                case API.DATA.EVENTS.FORCE_RELOAD:
+                    location.reload();
                     break;
             }
 
