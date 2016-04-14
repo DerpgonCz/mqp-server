@@ -74,15 +74,17 @@ Room.prototype.getRoomMeta = function(){
 };
 
 Room.prototype.makeOwner = function(){
-	if (!this.roomInfo.ownerEmail) return;
+	if (!config.room.ownerEmail) return;
+
 	var that = this;
 
 	DB.getUser(this.roomInfo.ownerEmail, function(err, data){
 		if (err) { console.log('Cannot make room owner: ' + err); return; }
 
-		if (typeof data.uid !== 'number') { console.log('Cannot make room owner: UserUIDError'); return; 
+		if (typeof data.uid !== 'number') { console.log('Cannot make room owner: UserUIDError'); return; }
 
 		log.info('Granting ' + data.un + ' (' + data.uid + ') Owner permissions');
+
 		// Remove user from other roles to avoid interesting bugs
 		for (var i in that.data.roles){
 			var ind = that.data.roles[i].indexOf(data.uid);
