@@ -6658,7 +6658,6 @@
      });*/
 
     MP.getTokenName = function() {
-        if (config.selfHosted == true) {
             if (MP.session.roomInfo.slug) {
                 return MP.session.roomInfo.slug + '-token';
             }
@@ -6671,10 +6670,6 @@
                 }
             }
             return null;
-        }
-        else {
-            return 'token';
-        }
     };
 
     //Successful connection to the socket
