@@ -34,7 +34,7 @@ if (config.apis.musiqpad.sendLobbyStats && (!config.apis.musiqpad.key || config.
 	throw 'In order to send stats to the lobby you must generate an key here: https://musiqpad.com/lounge';
 }
 
-fs.writeFile('./webconfig.js', webConfig);
+//fs.writeFile('./webconfig.js', webConfig);
 var socketServer = new SocketServer(server);
 
 process.on('uncaughtException', function(err) {

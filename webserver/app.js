@@ -50,7 +50,7 @@ app.use(express.static(path.resolve(__dirname, 'public')));
 app.use('/pads', express.static(path.resolve(__dirname, 'public')));
 app.get('/config', function(req, res) {
     res.type('application/javascript');
-    res.send('var config=JSON.parse(\'{"useSSL":false,"serverPort":"3076","selfHosted":true}\')');
+    res.send('var config=JSON.parse(\'{"useSSL":true,"serverPort":"443","selfHosted":true,"socketUri":"socket.pad.fuechschen.org"}\')');
 });
 app.get('/lounge', function(req, res){
   res.sendFile(__dirname + '/public/lounge.html');
