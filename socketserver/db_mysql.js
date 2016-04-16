@@ -60,7 +60,7 @@ var MysqlDB = function(){
 					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
 					    `owner` INTEGER UNSIGNED NULL DEFAULT NULL,\
 					    `owner_old` INTEGER UNSIGNED NULL DEFAULT NULL,\
-					    `name` VARCHAR(32) NOT NULL DEFAULT 'NULL',\
+					    `name` VARCHAR(50) NOT NULL DEFAULT 'NULL',\
 					    `created` DATETIME NOT NULL,\
 					    PRIMARY KEY (`id`)\
 					);\
@@ -182,7 +182,7 @@ MysqlDB.prototype.getPlaylist = function(pid, callback) {
 };
 
 MysqlDB.prototype.createPlaylist = function(owner, name, callback) {
-	name = name.substr(0, 100);
+	name = name.substr(0, 50);
 	
     var Playlist = require('./playlist');
     var pl = new Playlist();
