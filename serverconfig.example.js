@@ -94,12 +94,16 @@ config.loginExpire = 7;
 
 // Database config
 config.db = {
-	dbType: 		'level',   				// Values "level" for LevelDB and "mysql" for MySQL
+	dbType: 		'level',   				// Values "level" for LevelDB, "mysql" for MySQL and "mongo" for MongoDB
 	dbDir: 			'./socketserver/db',	// Only used for LevelDB. Directory to save databases.  Default is ./socketserver/db
 	mysqlUser: 		'',     				// Only used for MySQL.  Database username
 	mysqlPassword: 	'', 					// Only used for MySQL.  Database password
 	mysqlHost: 		'',  					// Only used for MySQL.  Host address
 	mysqlDatabase: 	'', 					// Only used for MySQL.  Database being used
+	mongoUser: 		'',     				// Only used for MongoDB.  Database username
+	mongoPassword: 	'', 					// Only used for MongoDB.  Database password
+	mongoHost: 		'',						// Only used for MongoDB.  Host address
+	mongoDatabase:	'' 						// Only used for MongoDB.  Database being used
 };
 
 /*
@@ -113,6 +117,8 @@ config.db = {
 	'djqueue.cycle': Ability to enable/disable queue cycle
 	'djqueue.move': Ability to move, swap, add and remove people in the queue
 	'djqueue.playLiveVideos': Ability to play live videos with undefined duration
+	'djqueue.lock.bypass': Bypass locked queue
+	'djqueue.limit.bypass': Bypass queue limit
 	'chat.send': Abilty to send chat messages
 	'chat.delete': Ability to delete others' chat messages
 	'chat.specialMention': Ability to use @everyone, @guest and @djs as mention
@@ -180,6 +186,8 @@ config.roles = {
 			'djqueue.limit',
 			'djqueue.move',
 			'djqueue.playLiveVideos',
+            'djqueue.limit.bypass',
+            'djqueue.lock.bypass',
 			'chat.send',
 			'chat.private',
 			'chat.broadcast',
@@ -195,6 +203,7 @@ config.roles = {
 			'room.banUser',
 			'room.ratelimit.bypass',
             'room.whois',
+			'server.checkForUpdates',
 		],
 		canGrantRoles: [
 			'dev',
@@ -222,6 +231,8 @@ config.roles = {
 			'djqueue.limit',
 			'djqueue.move',
 			'djqueue.playLiveVideos',
+			'djqueue.limit.bypass',
+            'djqueue.lock.bypass',
 			'chat.send',
 			'chat.private',
 			'chat.broadcast',
@@ -265,6 +276,8 @@ config.roles = {
 			'djqueue.limit',
 			'djqueue.move',
 			'djqueue.playLiveVideos',
+			'djqueue.limit.bypass',
+            'djqueue.lock.bypass',
 			'chat.send',
 			'chat.private',
 			'chat.delete',
@@ -304,6 +317,8 @@ config.roles = {
 			'djqueue.cycle',
 			'djqueue.move',
 			'djqueue.playLiveVideos',
+			'djqueue.limit.bypass',
+            'djqueue.lock.bypass',
 			'chat.send',
 			'chat.private',
 			'chat.delete',
@@ -355,6 +370,7 @@ config.roles = {
 			'djqueue.joinlocked',
 			'djqueue.leave',
 			'chat.send',
+            'chat.private',
 			'djqueue.skip.self',
 			'playlist.create',
 			'playlist.delete',
@@ -373,6 +389,7 @@ config.roles = {
 			'djqueue.join',
 			'djqueue.leave',
 			'chat.send',
+            'chat.private',
 			'djqueue.skip.self',
 			'playlist.create',
 			'playlist.delete',

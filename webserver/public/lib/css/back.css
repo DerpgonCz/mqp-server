@@ -4,7 +4,8 @@
     height: 100%;
     background-image: none;
     background-repeat: no-repeat;
-    background-size: 100% 100%;
+    background-size: cover;
+	background-position: center;
 }
 body {
     margin: 0;
@@ -288,6 +289,46 @@ a {
     border-radius: 50%;
     animation: spin-back 3s linear infinite;
 }
+.loader-small {
+    display: block;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    border: 2px solid transparent;
+    border-top-color: #A77DC2;
+    border-bottom-color: #A77DC2;
+    border-radius: 50%;
+    animation: spin-back 4s linear infinite;
+    margin: 10px 0 0 -20px;
+}
+.loader-small:before {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border: 2px solid transparent;
+    border-top-color: #F46B40;
+    border-bottom-color: #F46B40;
+    border-radius: 50%;
+    animation: spin 2s linear infinite;
+}
+.loader-small:after {
+    content: "";
+    position: absolute;
+    top: 11px;
+    left: 11px;
+    right: 11px;
+    bottom: 11px;
+    border: 2px solid transparent;
+    border-top-color: #89BE6C;
+    border-bottom-color: #89BE6C;
+    border-radius: 50%;
+    animation: spin-back 3s linear infinite;
+}
 .icon-info {
     background: #94959A;
     border-radius: 10px;
@@ -297,7 +338,11 @@ a {
     font-weight: bold;
     margin: 0 3px;
 }
-.modal-bg {
+.video-blocked-bg {
+  display: none !important;
+  top: 0;
+}
+.video-blocked-bg, .modal-bg {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -305,27 +350,42 @@ a {
     z-index:89;
     display: table;
 }
-.modal-container {
+.video-blocked-container, .modal-container {
     display: table-cell;
     vertical-align: middle;
 }
-.modal {
+.video-blocked {
+  width: 740px !important;
+  height: 700px !important;
+  max-width: 90vw !important;
+  max-height: 90vh;
+}
+.video-blocked, .modal {
     width: 500px;
     background: #1C1C1F;
     border:1px solid #444A59;
     margin: 0 auto;
 }
-.modal-box {
+
+.video-blocked-box, .modal-box {
     height: calc(100% - 41px);
     width: 100%;
     display: table;
 }
-.modal-text {
+.video-blocked-text, .modal-text {
     text-align: center;
     vertical-align: middle;
     word-wrap: break-word;
     display: table-cell;
     padding: 20px;
+}
+.video-blocked-list {
+  width: 720px;
+  height: 520px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  max-height: calc(70vh - 133px);
+  max-width: calc(93vw - 30px);
 }
 .modal-controls {
     height:40px;

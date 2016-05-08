@@ -52,6 +52,33 @@
 		</div>
 		<div id="app">
 			<div id="room-bg"></div>
+			<div class="video-blocked-bg">
+				<div class="video-blocked-container">
+					<div class="video-blocked" style="">
+						<div class="video-blocked-box">
+							<div class="video-blocked-text">
+								<p>This Video is not available in your Country</p>
+								<p>Please choose an alternative from this list:</p>
+								<div class="video-blocked-list">
+									<div class="yt-blocked-sng" data-cid="{{z.cid}}" data-ng-repeat="z in searchResultsBlockedVideo" title="{{z.title}}">
+										<!--<div class="nav"><div class="mdi mdi-plus-circle"></div></div>-->
+										<div class="nail" style="background-image: url('{{z.thumbnail}}')"></div>
+										<div class="text" data-ng-bind="z.title"></div>
+										<div class="dur">
+											{{makeTime(z.duration)}}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="modal-controls">
+							<div class="modal-ctrl modal-no" id="video-blocked-button" style="width: 100%;">
+								<div class="mdi mdi-close"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 			<div class="logo-menu">
 				<div class="logo-dash">
 					<div ng-click="prop.t = 1" data-ng-class="{'active' : prop.t == 1 || prop.t == undefined}" class="nav logo-btn-home" title="Home"><div class="mdi mdi-apps"></div></div>
@@ -114,12 +141,6 @@
 					</section>
 					<section>
 						<div class="label">UI Settings</div>
-						<!--<input type="checkbox" ng-model="roomSettings.userJoinLeaveMessages"></input>-->
-						<label class="set-check">
-							<input type="checkbox" ng-model="roomSettings.enableEmojis" id="set-input-emojis" name="check" />
-						</label>
-						<span>Enable emojis</span>
-						<br>
 						<label class="set-check">
 							<input type="checkbox" ng-model="roomSettings.showImages" id="set-input-autoimg" name="check" />
 						</label>
@@ -130,21 +151,17 @@
 						</label>
 						<span>Show thumbnails in playlist view</span>
 						<br>
-						<label class="set-check">
-							<input type="checkbox" ng-model="roomSettings.soundMention" id="set-input-mention-sound" name="check" />
-						</label>
-						<span>Mention sound</span>
-						<br>
-						<label class="set-check">
-							<input type="checkbox" ng-model="roomSettings.globalMention" id="set-input-mention-global" name="check" />
-						</label>
-						<span>Global mentions</span>
 						<br>
 						<label class="set-check">
 							<input type="checkbox" ng-model="roomSettings.leaveConfirmation" id="set-input-leave-alert" name="check" />
 						</label>
 						<span>Leave confirmation</span>
 						<br>
+						<br>
+                        <label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.enableEmojis" id="set-input-emojis" name="check" />
+						</label>
+						<span>Enable emojis</span>
 						<br>
 						<label class="set-check">
 							<input type="checkbox" ng-model="roomSettings.emojis.basic" id="set-input-emojis-basic" name="check" />
@@ -181,19 +198,221 @@
 							<input type="checkbox" ng-model="roomSettings.chatTimestampFormat" ng-true-value="'12hr'" ng-false-value="'24hr'" id="set-input-style-timestamp" name="check" />
 						</label>
 						<span>Time format</span>
-					</section>
-					<section>
-						<div class="label">Chat notifications</div>
-						<label class="set-check">
-							<input type="checkbox" ng-model="roomSettings.justplayed" id="set-input-notif-justplayed" name="check" />
-						</label>
-						<span>Show DJ and song title after a song finishes playing</span>
+						<br>
 						<br>
 						<label class="set-check">
-							<input type="checkbox" ng-model="roomSettings.userJoinLeaveMessages" id="set-input-notif-joinleave" name="check" />
+							<input type="checkbox" ng-model="roomSettings.autoplayblocked" id="set-autplay-blocked" name="check" />
 						</label>
-						<span>Show user join/leave messages</span>
+						<span>AutoPlay new video if current one is blocked</span>
 					</section>
+					<section>
+                        <div class="label">Notification settings</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>Chat</th>
+                                    <th>Desktop</th>
+                                    <th>Sound</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Song ended</td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.chat.advance_last" id="set-input-notif-chat-advance_last" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.advance_last" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-advance_last" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.advance_last" id="set-input-notif-sound-advance_last" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Song started</td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.chat.advance_next" id="set-input-notif-chat-advance_next" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.advance_next" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-advance_next" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.advance_next" id="set-input-notif-sound-advance_next" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Show user join messages</td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.chat.join" id="set-input-notif-chat-join" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.join" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-join" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.join" id="set-input-notif-sound-join" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Show user leave messages</td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.chat.leave" id="set-input-notif-chat-leave" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.leave" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-leave" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.leave" id="set-input-notif-sound-leave" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Chat mention</td>
+                                    <td></td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.mention" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-mention" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.mention" id="set-input-notif-sound-mention" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Broadcast message (/broadcast)</td>
+                                    <td></td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.broadcast" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-broadcast" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.broadcast" id="set-input-notif-sound-broadcast" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Global mention (@everyone, @staff, @djs etc.)</td>
+                                    <td></td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.global" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-global" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.global" id="set-input-notif-sound-global" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>User likes a song</td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.chat.like" id="set-input-notif-chat-like" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.like" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-like" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.like" id="set-input-notif-sound-like" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>User grabs a song</td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.chat.grab" id="set-input-notif-chat-grab" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.grab" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-grab" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.grab" id="set-input-notif-sound-grab" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>User sends a chat message</td>
+                                    <td></td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.chat" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-chat" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.chat" id="set-input-notif-sound-chat" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>User sends you a PM</td>
+                                    <td>
+                                        <label class="set-check">
+                                            <input type="checkbox" ng-model="roomSettings.notifications.chat.pm" id="set-input-notif-chat-pm" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.pm" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-pm" name="check">
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.sound.pm" id="set-input-notif-sound-pm" name="check">
+                                        </label>
+                                    </td>
+                                </tr>
+								<tr>
+                                    <td>Do notifications when window is focused</td>
+                                    <td></td>
+                                    <td>
+                                        <label class="set-check">
+                                        <input type="checkbox" ng-model="roomSettings.notifications.desktop.showfocused" ng-change="checkDeskNotifPerm()" id="set-input-notif-desktop-showfocused" name="check">
+                                        </label>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br>
+                    </section>
 				</div>
 				<div ng-show="prop.t == 3 && isLoggedIn" class="logo-tab library" style="display: block;">
 					<div class="lib-folders" >
@@ -205,7 +424,8 @@
 						<div class="lib-fdr" data-ng-repeat="x in playlists | orderByPlaylist:'name'" data-pid="{{x.id}}" ng-class="{selected: x.id == viewedPl}">
 							<div class="text" title="{{x.name}}" data-ng-bind="x.name"></div>
 							<div class="nav"><span class="icon-info" data-ng-bind="x.num"></span></div>
-							<div class="nav"><div ng-if="activepl == x.id" class="mdi mdi-checkbox-marked-circle small green"></div></div>
+							<div ng-if="activepl == x.id" class="nav"><div class="mdi mdi-checkbox-marked-circle small green"></div></div>
+							<div ng-if="activepl != x.id" class="nav"><div class="btn-activate-playlist mdi mdi-checkbox-blank-circle-outline small"></div></div>
 						</div>
 						</div>
 						<div class="lib-fdr-search btn-import">
@@ -230,7 +450,7 @@
 						</div>
 						<div class="lib-song-list" data-ng-show="viewedPl">
 							<div class="lib-sng" data-ng-class="{'lib-history' : inHistory(y.cid), 'lib-unavailable' : y.unavailable}" data-ng-repeat="y in viewedPlContents" data-cid="{{y.cid}}" title="{{y.title}}">
-								<img src="https://i.ytimg.com/vi/{{y.cid}}/default.jpg" class="lib-thumb" data-ng-show="roomSettings.library.thumbnails" >
+								<img ng-src="https://i.ytimg.com/vi/{{y.cid}}/default.jpg" class="lib-thumb" data-ng-show="roomSettings.library.thumbnails" >
 								<div class="text" data-ng-bind="y.title" title="{{y.title}}"></div>
 								<div class="nav btn-song-bot" title="Move to the Bottom"><div class="mdi mdi-arrow-down small"></div></div>
 								<div class="nav btn-song-top" title="Move to the Top"><div class="mdi mdi-arrow-up small"></div></div>
@@ -255,8 +475,17 @@
 						<div class="nav btn-clear-filter" data-ng-click="historyList.filter = null"><div class="mdi mdi-close small"></div></div>
 					</div>
 					<div class="hist-songs">
-						<div class="hist-sng" data-ng-repeat="h in filteredHistory(historyList.filter)" data-cid="{{h.song.cid}}">
-							<div class="nav"><div class="mdi mdi-history"></div></div>
+						<div class="hist-sng" data-ng-repeat="h in historyList.history" data-cid="{{h.song.cid}}" data-ng-show="filteredHistory(h, historyList.filter)">
+							<div class="nav">{{$index + 1}}</div>
+							<div class="nav btn-grab btn-grab-history">
+								<div class="mdi mdi-plus-circle-outline"></div>
+								<div class="popup playlists-grab-history playlists-grab">
+									<div class="pl-grab-create">Create a playlist</div>
+									<div class="pl-grab" data-ng-repeat="x in playlists | orderByPlaylist:'name'" data-pid="{{x.id}}">
+										{{x.name}}
+									</div>
+								</div>
+							</div>
 							<div class="nail" style="background-image: url('https://i.ytimg.com/vi/{{h.song.cid}}/default.jpg')"></div>
 							<div class="texts">
 								<p class="text sng" title="History Song Title" data-ng-bind="h.song.title"></p>
@@ -359,11 +588,55 @@
 			</div>
 			<div id="app-right">
 				<div data-ng-show="(prop.c == 1)" id="chat-back">
-					<div id="chat">
-						<div id="messages"></div>
+					<div class="tray">
+						<div data-ng-click="prop.ci = 1; filterChat()" data-ng-class="{'active' : prop.ci == 1}" class="tab btn-mainchat" title="Chat"><div class="mdi mdi-message"></div></div>
+						<div data-ng-click="pmFuncs.changeToPMTab()" data-ng-class="{'active' : prop.ci == 2}" class="tab btn-pm" title="Private Messages" data-ng-show="isLoggedIn && checkPerm('chat.private')"><div class="mdi mdi-message-text"></div><span class="icon-info" data-ng-show="getPMUnread() > 0" data-ng-bind="getPMUnread()"></span></div>
+						<div data-ng-click="prop.ci = 3; filterChat('mentions')" data-ng-class="{'active' : prop.ci == 3}" class="tab btn-mentions" title="Mentions" data-ng-show="isLoggedIn"><span class="icon-info">@</span></div>
 					</div>
-					<div id="msg-form">
-						<input id="msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
+					<div data-ng-show="(prop.ci == 1 || prop.ci == 3)" id="chat-container">
+						<div id="chat">
+							<div id="messages"></div>
+						</div>
+						<div id="msg-form">
+							<input id="msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
+						</div>
+					</div>
+					<div data-ng-show="(prop.ci == 2 && isLoggedIn)" id="pm-container">
+						<div class="pms" data-ng-show="(activepm == null)">
+							<div class="pm-user" data-ng-class="{'self' : user.uid == pmgroup.uid}" data-ng-repeat="pmgroup in pmFuncs.getOrderedPMs()" data-ng-click="pmFuncs.setPM(pmgroup)">
+								<div class="pm-user-info">
+									<div ng-bind-html="makeBadgeStyle({ user: pmgroup.user, type: 'pm' }) | to_trusted"></div>
+									<span class="uname" style="{{makeUsernameStyleByRole(pmgroup.user.role)}}" data-ng-bind="pmgroup.user.un"></span>
+									<span class="icon-info" data-ng-show="pmgroup.unread > 0" data-ng-bind="pmgroup.unread"></span>
+								</div>
+								<div class="pm-latest-info">
+									<span class="pm-info" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.from == user.uid ? user.un : pmgroup.user.un)"></span>
+									<span class="pm-message" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.message)"></span>
+									<span class="time">{{(pmFuncs.makeMessageTime(pmFuncs.getPMGroupInfo(pmgroup).lastPM.time))}}</span>
+								</div>
+							</div>
+							<div class="btn btn-inner-pm btn-new-pm">New Message</div>
+						</div>
+						<div class="pm-group" data-ng-show="(activepm != null)">
+							<div class="btn btn-inner-pm btn-back-pm-list" data-ng-click="pmFuncs.setPM(null)">Back to PM list</div>
+							<div id="pm-chat">
+								<div id="pm-messages">
+									<div class="loader-small" ng-show="!activepm.__init"></div>
+									<div class="pm-message" data-ng-repeat="msg in activepm.messages" ng-show="activepm.__init">
+										<div class="cm message">
+											<span class="time">{{(pmFuncs.makeMessageTime(msg.time))}}</span>
+											<div class="text">
+												<span data-uid="{{msg.from}}" class="uname" style="{{(user.uid == msg.from ? makeUsernameStyleByRole(user.role) : makeUsernameStyleByRole(activepm.user.role))}}">{{(user.uid == msg.from ? user.un : activepm.user.un)}}</span>
+												<span class="umsg" ng-bind-html="emojiReplace(msg.message) | to_trusted"></span>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div id="pm-msg-form">
+								<input id="pm-msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off"></input>
+							</div>
+						</div>
 					</div>
 				</div>
 				<div data-ng-show="(prop.c == 2)" id="people-back">

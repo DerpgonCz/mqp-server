@@ -1,5 +1,4 @@
 # mqp-server
-<<<<<<< HEAD
 musiqpad base for hosting an individual pad
 
 # Deploying musiqpad
@@ -8,7 +7,6 @@ musiqpad base for hosting an individual pad
 3. Setup your serverconfig.js file located in the root folder of musiqpad server.
 4. Start the server by starting the “start.js” file using node.
 5. If everything went well, there should be no error message.
-=======
 [![Version npm](https://img.shields.io/npm/v/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server)[![npm Downloads](https://img.shields.io/npm/dm/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server)
 
 [![NPM](https://nodei.co/npm/mqp-server.png)](https://npmjs.org/package/mqp-server)
@@ -63,4 +61,3 @@ Please Refer to the [API Documentation](https://musiqpad.com/api/) for the Event
 #### Support
 
 Please email [support@musiqpad.com](mailto:support@musiqpad.com) if you have any questions or queries.
->>>>>>> 1a2f62106eca96c594a3562b9c9ab914d488d6f8

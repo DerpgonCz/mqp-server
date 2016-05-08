@@ -14,6 +14,7 @@ tclient = new Twitter({
 	access_token_secret: 'cl9XqoGWpxXU3f2tjh0VhV7BxkChPrGH00Wr9O1mF8XnE'
 });
 var extend = require('extend');
+var updateNotifier = require('update-notifier');
 
 //Files
 var config = require('../serverconfig');
@@ -294,7 +295,6 @@ var SocketServer = function(server){
 			}
 			that.removeSock(socket);
 		});
-
 
 		socket.on("message", function(data, flags){
 			var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
@@ -790,9 +790,23 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
+						
+					if (that.room.queue.users.length >= that.room.queue.limit && !Roles.checkPermission(socket.user.role, 'djqueue.limit.bypass')){
+						returnObj.data = {
+							error: 'CannotJoinQueueOverLimit'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (that.room.queue.lock && !Roles.checkPermission(socket.user.role, 'djqueue.lock.bypass')){
+						returnObj.data = {
+							error: 'CannotJoinLockedQueue'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
 
-					//TODO: Check over limit permission
-					//TODO: Check lock permission
 					if (!socket.user.activepl){
 						returnObj.data = {
 							error: 'CannotJoinQueueWithoutPlaylist'
@@ -1450,21 +1464,24 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-
-					if (!data.data.message || data.data.message == '') {
+					
+					if (!data.data.message || data.data.message == '' || typeof data.data.message != 'string') {
 						returnObj.data = {
 							error: 'EmptyMessage'
 						};
 						socket.sendJSON(returnObj);
 						break;
 					}
-
-					returnObj.data = {
-						success: true,
-						cid: that.room.sendMessage(socket, data.data.message)
-					};
-
-					socket.sendJSON(returnObj);
+	
+					that.room.sendMessage(socket, data.data.message, null, null, function(cid){
+						returnObj.data = {
+							success: true,
+							cid: cid,
+						};
+					
+						socket.sendJSON(returnObj);
+					});
+					
 					break;
 				case 'staffchat':
 					/*
@@ -1493,7 +1510,15 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-
+					
+					if (!data.data.message || data.data.message == '' || typeof data.data.message != 'string') {
+						returnObj.data = {
+							error: 'EmptyMessage'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					returnObj.data = {
 						success: true
 					};
@@ -1529,14 +1554,6 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					var userSock = that.room.findSocketByUid(data.data.uid);
-					if (userSock == null) {
-						returnObj.data = {
-							error: 'UserNotInPad'
-						};
-						socket.sendJSON(returnObj);
-						break;
-					}
 					if (typeof data.data.message != 'string' || !data.data.message){
 						returnObj.data = {
 							error: 'emptyMessage'
@@ -1553,16 +1570,153 @@ var SocketServer = function(server){
 						uid: data.data.uid
 					};
 					socket.sendJSON(returnObj);
-
-					userSock.sendJSON({
-						type: 'privateMessage',
+					
+					var userSock = that.room.findSocketByUid(data.data.uid);
+					if (userSock != null) {
+						userSock.sendJSON({
+							type: 'privateMessage',
+							data: {
+								uid: socket.user.uid,
+								message: msg
+							}
+						});
+					}
+					DB.logPM(socket.user.uid, data.data.uid, msg);
+					break;
+					
+				case 'getConversations':
+					/*
+				    Expected input object: 
+					{
+						type: 'getConversations',
 						data: {
-							uid: socket.user.uid,
-							message: msg
+						}
+					}
+					*/
+					if (!socket.room) {
+						returnObj.data = {
+							error: 'NotInPad'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					DB.getConversations(socket.user.uid, function(err, res) {
+						if (err) {
+							
+						} else {
+							for (var i in res) {
+								if (res[i].user && res[i].user.uid > 0){
+									res[i].user.role = that.room.findRole(res[i].user.uid);
+								}
+							}
+							returnObj.data = {
+								conversations: res
+							};
+							socket.sendJSON(returnObj);
 						}
 					});
 					break;
-
+		
+				case 'getPrivateConversation':
+					/*
+				    Expected input object: 
+					{
+						type: 'getPrivateConversation',
+						data: {
+							uid: uid
+						}
+					}
+					*/
+					
+					if (!socket.room) {
+						returnObj.data = {
+							error: 'NotInPad'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!data.data.uid) {
+						break;
+					}
+					DB.getUserByUid(data.data.uid, function(err, user) {
+						if (err) {
+							returnObj.data = {
+								error: 'UserNotFound'
+							};
+							socket.sendJSON(returnObj);
+							return;
+						}
+						DB.getConversation(socket.user.uid, data.data.uid, function(err, res) {
+							if (err) {
+								returnObj.data = {
+									error: 'FailedRetrievingPMs'
+								};
+								socket.sendJSON(returnObj);
+								return;
+							}
+							
+							returnObj.data = {
+								user: user.getClientObj(),
+								messages: res
+							}
+							socket.sendJSON(returnObj);
+						});
+					});
+					break;
+					
+				case 'markConversationRead':
+					/*
+				    Expected input object: 
+					{
+						type: 'markConversationRead',
+						data: {
+							uid: uid,
+							date: date
+						}
+					}
+					*/
+					if (!socket.room) {
+						returnObj.data = {
+							error: 'NotInPad'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					if (!data.data.uid || ! data.data.date) {
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					DB.markConversationRead(socket.user.uid, data.data.uid, new Date(data.data.date));
+					break;
+				
 				case 'broadcastMessage':
 					if (!Roles.checkPermission(socket.user.role, 'chat.broadcast')){
 						returnObj.data = {
@@ -1571,6 +1725,15 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
+					
+					if (!data.data.message || typeof data.data.message != 'string'){
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					that.room.sendBroadcastMessage(
 						data.data.message.replace('<', '&lt;').replace('>', '&gt;')
 					);
@@ -1585,8 +1748,8 @@ var SocketServer = function(server){
 						}
 					 }
 					*/
-
-					if (!data.data.query){
+					
+					if (!data.data.query || typeof data.data.query != 'string'){
 						returnObj.data = {
 							error: 'PropsMissing'
 						};
@@ -1646,7 +1809,9 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-
+					
+					data.data.name = data.data.name.toString();
+					
 					socket.user.addPlaylist(data.data.name, function(err, pl){
 						if (err){
 							returnObj.data = {
@@ -2116,7 +2281,15 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-
+					
+					if (typeof data.data.voteType != 'string') {
+						returnObj.data = {
+							error: 'InvalidVoteType'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					var res = that.room.queue.vote(data.data.voteType, socket);
 
 //					if (res){
@@ -2196,7 +2369,15 @@ var SocketServer = function(server){
 					 	}
 					 }
 					*/
-
+					
+					if (typeof data.data.query != 'string') {
+						returnObj.data = {
+							error: 'InvalidQueryType'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					YT.findChannels({
 						query: data.data.query,
 						pageToken: data.data.pageToken,
@@ -2221,7 +2402,15 @@ var SocketServer = function(server){
 					 	}
 					 }
 					*/
-
+					
+					if (typeof data.data.query != 'string') {
+						returnObj.data = {
+							error: 'InvalidQueryType'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					YT.findPlaylists({
 						query: data.data.query,
 						pageToken: data.data.pageToken,
@@ -2248,7 +2437,7 @@ var SocketServer = function(server){
 					*/
 
 					YT.getChannelPlaylists({
-						channelId: data.data.channelId,
+						channelId: data.data.channelId.toString(),
 						pageToken: data.data.pageToken,
 					}, function(err, data){
 						if(err)
@@ -2273,7 +2462,7 @@ var SocketServer = function(server){
 					*/
 
 					YT.getPlaylist({
-						playlistId: data.data.playlistId,
+						playlistId: data.data.playlistId.toString(),
 						pageToken: data.data.pageToken,
 					}, function(err, data){
 						if(err)
@@ -2316,7 +2505,7 @@ var SocketServer = function(server){
 
 					//Get playlist
 					YT.getPlaylistFull({
-						playlistId: data.data.playlistId,
+						playlistId: data.data.playlistId.toString(),
 						pageToken: data.data.pageToken,
 					}, function(err, videos){
 						//Handle error
@@ -2329,7 +2518,7 @@ var SocketServer = function(server){
 						}
 
 						//Playlist creation and import
-						YT.getPlaylistName(data.data.playlistId, function(err, plname){
+						YT.getPlaylistName(data.data.playlistId.toString(), function(err, plname){
 
 							//Prepare for multiple playlists if necessary, split by 200
 							var returnPlaylists = [];
@@ -2666,6 +2855,41 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 					});
 					break;
+				case 'getUserByName':
+					/*
+					 Expects {
+					 	type: 'getUserByName',
+					 	data: {
+					 		un: un
+					 	}
+					 }
+					*/
+					if (!data.data.un){
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					DB.getUserByName(data.data.un, { getPlaylists: false }, function(err, user){
+						//Handle error
+						if (err){
+							returnObj.data = {
+								error: err
+							};
+							socket.sendJSON(returnObj);
+							return;
+						}
+						
+						//Execute and return data
+						returnObj.data = {
+							user: user.getClientObj(),
+						};
+						returnObj.data.user.role = that.room.findRole(returnObj.data.user.uid);
+						socket.sendJSON(returnObj);
+					});
+					break;
                 case 'whois':
 					/*
 					 Expects {
@@ -2732,6 +2956,26 @@ var SocketServer = function(server){
 						DB.getUserByName(data.data.un, { getPlaylists: false }, cb);
 					else
 						DB.getUserByUid(data.data.uid, { getPlaylists: false }, cb);
+					break;
+				case 'checkForUpdates':
+					//Check for permission
+					if (!Roles.checkPermission(socket.user.role, 'server.checkForUpdates')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					const pkg = require('./../package.json');
+					var notifier = updateNotifier({
+						pkg: pkg,
+						updateCheckInterval: 0
+					});
+					
+					returnObj.data = {
+						update: notifier.update,
+					};
+					socket.sendJSON(returnObj);
 					break;
 			}
 		});
