@@ -4880,15 +4880,10 @@
         }
     };
 
-    var socketPort = config.serverPort;
-
-    var socketDomain = config.serverHost || document.location.hostname;
-
-    var socket = null;
 
 
     function initSocket(){
-        socket = new WebSocket((config.useSSL ? 'wss' : 'ws') + '://' + socketDomain + ':' + socketPort);
+        socket = new WebSocket('wss://pad.fuechschen.org/sock');
 
         socket.sendJSON = function(inObj){ socket.send( JSON.stringify(inObj) );};
         /*DEBUG*/
@@ -7411,7 +7406,7 @@
      });*/
 
     MP.getTokenName = function() {
-        if (config.selfHosted && location.host.indexOf('musiqpad.com') != -1) {
+        if (location.host.indexOf('musiqpad.com') != -1) {
             if (MP.session.roomInfo.slug) {
                 return MP.session.roomInfo.slug + '-token';
             }
