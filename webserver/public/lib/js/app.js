@@ -1,6 +1,22 @@
 /*global API config angular YT CryptoJS Tour lightbox grecaptcha*/
 (function(){
 
+  var changebg = function () {
+      var bgurl = backgrounds.urls[backgrounds.count];
+      $('#room-bg').css('background-image', 'url(' + bgurl + ')');
+      console.log('Now changing background to #' + backgrounds.count + ': ' + bgurl);
+      backgrounds.count = backgrounds.count + 1;
+      if (backgrounds.count === backgrounds.urls.length) {
+          backgrounds.count = 0;
+      }
+  };
+
+  var backgrounds = {
+      urls: fuebackgroundurls || ['//musiqpad.com/pads/lib/img/city-scape.jpg'],
+      count: 1,
+      interval: fuebackgroundinterval || 360
+  };
+
     // Initialization
     var MP = {
 
@@ -1968,6 +1984,7 @@
             skip: {
                 description: 'Skip the current DJ',
                 staff: true,
+                aliases: ['fs'],
                 permission: 'djqueue.skip.other',
                 exec: function(arr){
                     arr.shift();
@@ -2305,6 +2322,14 @@
                         API.sendSocket({type: 'tweetSend', data: {msg: arr.join(' ').trim()}});
                     }
                 }
+            },
+
+            changebg : {
+              description: 'Changes the roombackground',
+              aliases: ['background'],
+              exec: function(){
+                changebg();
+              }
             },
 
             badge: {
@@ -4601,7 +4626,7 @@
 
 
     function initSocket(){
-        socket = new WebSocket('wss://socket.pad.fuechschen.org');
+        socket = new WebSocket('wss://pad.fuechschen.org/sock');
 
         socket.sendJSON = function(inObj){ socket.send( JSON.stringify(inObj) );};
         /*DEBUG*/
@@ -6696,28 +6721,8 @@
                         if (err){ console.log('Token is invalid.'); return;}
                     });
                 }
-
-                var backgrounds = {
-                    urls: fuebackgroundurls,
-                    count: 1,
-                    interval: 6 * 60
-                };
-                backgrounds.urls.forEach(function (bgurl, i) {
-                    $('#room-bg').append($('<div id="room-bg-' + i + '">').css({
-                        "background-image": 'url(' + backgrounds.urls[backgrounds.count] + ')',
-                        "opacity": 0
-                    }));
-                });
                 $('#room-bg').css('background-image', 'url(' + backgrounds.urls[0] + ')');
-                setInterval(function () {
-                    var bgurl = backgrounds.urls[backgrounds.count];
-                    $('#room-bg').css('background-image', 'url(' + bgurl + ')');
-                    console.log('Now changing background to #' + backgrounds.count + ': ' + bgurl);
-                    backgrounds.count = backgrounds.count + 1;
-                    if (backgrounds.count === backgrounds.urls.length) {
-                        backgrounds.count = 0;
-                    }
-                }, backgrounds.interval * 1000);
+                setInterval(changebg, backgrounds.interval * 1000);
                 function listbgs() {
                     var bgs = '';
                     backgrounds.urls.forEach(function (bg, i) {

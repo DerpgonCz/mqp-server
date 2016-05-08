@@ -15,6 +15,8 @@ var server = null;
 var server2 = null;
 var socketServer = null;
 
+var request = require('request');
+
 if (config.certificate && config.certificate.key && config.certificate.cert){
   server = https.createServer(config.certificate, app);
 
@@ -52,9 +54,18 @@ app.get('/config', function(req, res) {
     res.type('application/javascript');
     res.send('var config=JSON.parse(\'{"useSSL":true,"serverPort":"443","selfHosted":true,"socketUri":"socket.pad.fuechschen.org"}\')');
 });
+
 app.get('/lounge', function(req, res){
   res.sendFile(__dirname + '/public/lounge.html');
 });
+
+app.get('/lounge/announce.json', function(req, res){
+  request.get('https://musiqpad.com/lounge/announce.json', function(err, resp, body){
+    if(!err && [200, 304].indexOf(resp.statusCode) !== -1) res.status(200).json(JSON.parse(body));
+    else res.status(500).send('Error from MusiqPad');
+  });
+});
+
 app.get('/api/room', function(req,res){
   var roomInfo = {
     "slug": config.room.slug,

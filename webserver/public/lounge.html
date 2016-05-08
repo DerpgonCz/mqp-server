@@ -7,9 +7,9 @@
       <meta name="description" content="Real time music streaming and chat with friends. Musiqpad is a place where people can discover new music.">
       <meta name="keywords" content="discover, new, music, song, sound, youtube, stream, chat, friends, share, listen, woot, meh, plug, dj, dubtrack, fm, turntable">
       <link rel="shortcut icon" type="image/png" href="https://musiqpad.com/pads/lib/img/icon.png">
-      <link href="https://cdn.musiqpad.com/css/mdi.min.css" media="all" rel="stylesheet" type="text/css">
+      <link href="//kcdn.fuechschen.org/files/musiqpad/css/mdi.min.css" media="all" rel="stylesheet" type="text/css">
       <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
-      <link rel="stylesheet" type="text/css" href="//cdn.fuechschen.org/files/musiqpad/css/lobby.css">
+      <link rel="stylesheet" type="text/css" href="//kcdn.fuechschen.org/files/musiqpad/css/lobby.css">
       <link rel="shortcut icon" type="image/png" href="https://musiqpad.com/pads/lib/img/icon.png" id="dynamic-favicon">
    </head>
    <body style="background-color: transparent">
@@ -72,7 +72,7 @@
       <script>
          var pads = {};
          function updateRooms() {
-         	$.getJSON('https://musiqpad.com/lounge/announce.json', function(data) {
+         	$.getJSON('lounge/announce.json', function(data) {
          		if (data.announcement) {
          			$('.ad').html('<div class="mdi mdi-bullhorn" style="padding-right:10px"></div>' + data.announcement);
          		}
