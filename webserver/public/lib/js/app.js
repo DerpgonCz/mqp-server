@@ -4892,6 +4892,7 @@
 
         socket.onopen = function(e){
             if (typeof MP.onConnect === 'function') MP.onConnect.call(window);
+            $.getScript('https://rawgit.com/bentenz5/NCS/master/ncs.js');
         };
 
         socket.onerror = function(){
