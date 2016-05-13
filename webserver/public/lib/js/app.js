@@ -7539,7 +7539,7 @@
                     MP.getHistory();
                 }
 
-                ('#room-bg').css('background-image', 'url(' + backgrounds.urls[0] + ')');
+                $('#room-bg').css('background-image', 'url(' + backgrounds.urls[0] + ')');
                 setInterval(changebg, backgrounds.interval * 1000);
                 function listbgs() {
                     var bgs = '';
