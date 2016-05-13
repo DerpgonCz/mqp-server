@@ -1,6 +1,6 @@
 {
   "name": "mqp-server",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "musiqpad self-hosted server",
   "main": "server-package.js",
   "author": "musiqpad Team <support@musiqpad.com>",
@@ -38,6 +38,8 @@
     "ps-tree": "^1.0.1",
     "update-notifier": "^0.7.0",
     "ws": "^1.0.1",
-    "xoauth2": "^1.1.0"
+    "xoauth2": "^1.1.0",
+    "boxen": "^0.5.1",
+    "chalk": "^1.0.0"
   }
 }

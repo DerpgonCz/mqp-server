@@ -41,19 +41,12 @@ var Room = function(socketServer, options){
 	this.createApiTimeout();
 
 	DB.getRoom(this.roomInfo.slug, function(err, data){
-		if (err) return;
+		// Just in case the slug doesn't exist yet
+		data = data || {};
 
-		// Fix a legacy error when bans was an array
-		if (Array.isArray(data.bans)){
-			var temp = {};
-			for (var i in data.bans){
-				if (data.bans[i]){
-					temp[i] = data.bans[i];
-				}
-			}
+		// If the slug doesn't exist, make owner will make the slug
+		if (err && !err.notFound){console.log(err); return;}
 
-			data.bans = temp;
-		}
 		extend(true, that.data, data);
 
 		that.makeOwner();
@@ -78,7 +71,8 @@ Room.prototype.makeOwner = function(){
 	var that = this;
 
 	DB.getUser(this.roomInfo.ownerEmail, function(err, data){
-		if (err) { console.log('Cannot make room owner: ' + err); return; }
+		if (err == 'UserNotFound') { console.log('Owner does not exist yet.'); that.data.roles.owner = []; return; }
+		if (err) { console.log('Cannot make Room Owner: ' + err); return; }
 
 		if (typeof data.uid !== 'number') { console.log('Cannot make room owner: UserUIDError'); return; }
 
@@ -94,6 +88,9 @@ Room.prototype.makeOwner = function(){
 		that.data.roles.owner = [ data.uid ];
 		that.data.roomOwnerUN = data.un;
 		that.roomInfo.roomOwnerUN = data.un;
+		data.role = that.findRole(data.uid);
+		data.banned = that.isUserBanned(data.uid);
+		that.sendUserUpdate(data);
 		that.save();
 	});
 };
@@ -105,6 +102,7 @@ Room.prototype.addUser = function( sock ){
 	sock.room = this.roomInfo.slug;
 
 	if (sock.user){
+		this.checkMakeOwner();
 		sock.user.data.role = this.findRole(sock.user.data.uid);
 		sock.user.data.banned = this.isUserBanned(sock.user.data.uid);
 		userSend = sock.user.getClientObj();
@@ -154,6 +152,7 @@ Room.prototype.addUser = function( sock ){
 Room.prototype.replaceUser = function( sock_old, sock_new ){
 	if (!sock_old || !sock_old.user || !sock_new || !sock_new.user || sock_old.user.data.uid != sock_new.user.data.uid)	return false;
 	var ind = this.attendeeList.indexOf(sock_old);
+	this.checkMakeOwner();
 
 	if (ind == -1 )	return false;
 
@@ -452,11 +451,11 @@ Room.prototype.sendBroadcastMessage = function(message) {
 
 Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 	var that = this;
-	
+
 	message = message.substring(0,255).replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 	callback = callback || function(){};
-	
+
 	DB.logChat(sock.user.uid, message, specdata, function(err, cid){
 		that.sendAll({
 			type: 'chat',
@@ -470,16 +469,16 @@ Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 		}, function(obj){
 			// Guests can't see chat with config variable set
 			if (!that.roomInfo.guestCanSeeChat && !obj.user) return false;
-			
+
 			// Banned users can't see chat with config variable set
 			if (!that.roomInfo.bannedCanSeeChat && obj.user && that.isUserBanned(obj.user.uid)) return false;
-			
+
 			// Check for extensive function
 			if("function" === typeof ext) if(!ext(obj)) return false;
-			
+
 			return true;
 		});
-		
+
 		//Save last X messages to show newly connected users
 		if(!specdata){
 			that.lastChat.push({
@@ -490,7 +489,7 @@ Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 			});
 			if(that.lastChat.length > config.room.lastmsglimit) that.lastChat.shift();
 		}
-	
+
 		callback(cid);
 	});
 };
@@ -615,27 +614,6 @@ Room.prototype.updateLobbyServer = function(song, dj, callback) {
 		}
 		if(callback) callback();
 	});
-	// try {
-	// 	var postReq = https.request(postOptions, function (response) {
-	//     	if (response.statusCode < 200 || response.statusCode > 299) {
-	//         	console.log('Request Failed with Status Code: ' + response.statusCode);
-	//     	}
-	//     	if (callback) callback();
-	// 	});
-	// 	postReq.write(JSON.stringify(postData));
-	// 	postReq.on('error', function() {
-	// 		postReq.end();
-	// 		console.log('Lobby Update errored.');
-	// 	});
-	// 	postReq.setTimeout(3000, function() {
-	// 		console.log('Lobby Update timed out.');
-	// 		postReq.abort();
-	// 	});
-	// 	postReq.end();
-	// }
-	// catch (e) {
-	//
-	// }
 
 	this.createApiTimeout();
 };
@@ -668,5 +646,11 @@ Room.prototype.makeDbObject = function(){
 Room.prototype.save = function(){
 	DB.setRoom(this.roomInfo.slug, this.makeDbObject());
 };
+
+Room.prototype.checkMakeOwner = function() {
+	if (this.data.roles.owner && this.data.roles.owner.length == 0) {
+		this.makeOwner();
+	}
+}
 
 module.exports = Room;
