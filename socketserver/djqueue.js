@@ -1,6 +1,8 @@
 var Roles = require('./role');
 var config = require('../serverconfig');
 
+var story = require('storyboard').mainStory;
+
 var defaultVoteObj = function(){
 	return {
 		like: [],
@@ -248,7 +250,7 @@ djqueue.prototype._advance = function(){
 			//twitter poster
 			if(twitterenabled && Math.random() > config.room.tweetrandomness){
 				tclient.post('statuses/update', {status: 'Now playing: "' + that.currentsong.title + '" by ' + that.currentdj.user.data.un + '\n\npad.fuechschen.org\n#musiqpad #NowPlaying #FuechschenORG'}, function (err, tweet, resp) {
-					if(err) console.log('Twitter Error', err);
+					if(err) story.error('Twitter Error', {attach: err});
 				});
 			}
 

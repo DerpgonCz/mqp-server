@@ -24,7 +24,8 @@ Mailer.prototype.sendEmail = function(type, opts, receiver, callback){
 		subject: this.getType(type).subject,
 		html: this.getType(type).body.replace(/%%[A-Z]+%%/g, function(k){ return opts[k.slice(2, -2).toLowerCase()] || k; })
 	}, function(err, body){
-		console.log(err, body);
+		if(err) story.error('mail', 'Error sending mail', {attach: err});
+		else story.debug('mail', '', {attach: body});
 	});
 };
 

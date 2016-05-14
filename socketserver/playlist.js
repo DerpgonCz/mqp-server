@@ -69,12 +69,13 @@ Playlist.prototype.getFirstExpanded = function(callback){
 	}
 	
 	YT.getVideo(this.data.content[0], function(err, videoData){
+		
 		videoData = videoData || {};
 		
 		if ( videoData[ that.data.content[0] ] ){
 			//that.data.contentCache[0]( videoData[ this.data.content[0] ] );
 		}else{
-			console.log('VIDEO DATA DOESN\'T EXIST');
+			story.warn('video', 'Some VideoData doesn\'t exists', {attach: [err, videoData, that.data.content[0]]});
 			that.removeSong(that.data.content[0]);
 			that.getFirstExpanded(callback);
 			return;
