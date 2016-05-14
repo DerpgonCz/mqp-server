@@ -15,6 +15,7 @@ tclient = new Twitter({
 });
 var extend = require('extend');
 var updateNotifier = require('update-notifier');
+var story = require('storyboard').mainStory;
 
 //Files
 var config = require('../serverconfig');
@@ -131,14 +132,14 @@ var SocketServer = function(server){
 			};
 
 			if (this.addresses[ip].hits > this.maxHits){
-				log.info(ip + ' connect denied due to ratelimit (permanent)');
+				story.info('SocketServer', ip + ' connect denied due to ratelimit (permanent)');
 				return false;
 			}
 
 			var time = Date.now();
 
 			if (this.addresses[ip].conAttempts[ this.conAttemptsAllowed - 1 ] && (time - this.addresses[ip].conAttempts[ this.conAttemptsAllowed - 1 ]) < this.conMillisUntilReset){
-				log.info(ip + ' connect denied due to ratelimit');
+				story.info('SocketServer',ip + ' connect denied due to ratelimit');
 
 				if (!this.addresses[ip].warned)
 					this.addresses[ip].hits++;
@@ -170,7 +171,7 @@ var SocketServer = function(server){
 			var time = Date.now();
 
 			if (this.addresses[ip].messAttempts[ this.messAttemptsAllowed - 1 ] && (time - this.addresses[ip].messAttempts[ this.messAttemptsAllowed - 1 ]) < this.messMillisUntilReset){
-				log.info(ip + ' message denied due to ratelimit');
+				story.info('SocketServer',ip + ' message denied due to ratelimit');
 				if (!this.addresses[ip].warned)
 					this.addresses[ip].hits++;
 
@@ -215,7 +216,7 @@ var SocketServer = function(server){
 	}
 
 	this.wss = new WebSocketServer(settings);
-	log.info('Socket server listening on port ' + (config.socketServer.port || config.webServer.port));
+	story.info('SocketServer','Socket server listening on port ' + (config.socketServer.port || config.webServer.port));
 
 //	this.wss = new WebSocketServer({ port: config.socketServer.port });
 //	log.info('Socket server listening on port ' + config.socketServer.port);
@@ -227,20 +228,20 @@ var SocketServer = function(server){
 		for (var i in that.authdSockets.data){
 			try{
 				that.authdSockets.data[i].send('h');
-			}catch (e){ log.debug('Socket not active for keepalive');}
+			}catch (e){ story.debug('SocketServer','Socket not active for keepalive');}
 		}
 
 		for (var j = 0; j < that.unauthdSockets.data.length; j++){
 			try{
 				that.unauthdSockets.data[j].send('h');
-			}catch (e){ log.debug('Socket not active for keepalive');}
+			}catch (e){ story.debug('SocketServer','Socket not active for keepalive');}
 		}
 	}, 6000);
 
 	this.wss.on("connection", function(socket){
 		var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
 
-		log.info(ip + ' connected');
+		story.info('SocketServer',ip + ' connected');
 
 		if (!that.ipRateLimit.canConnect(ip)){
 			socket.terminate();
@@ -288,7 +289,7 @@ var SocketServer = function(server){
 		socket.on("close", function(){
 			var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
 
-			log.info(ip + ' disconnected');
+			story.info('SocketServer',ip + ' disconnected');
 			if(socket.user){
 				socket.user.uptime += Date.now() - socket.user.temp_uptime;
 				socket.user.temp_uptime = 0;
@@ -299,7 +300,7 @@ var SocketServer = function(server){
 		socket.on("message", function(data, flags){
 			var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
 
-			log.debug(ip + " sent: " + data);
+			story.debug('SocketServer',ip + " sent: " + data);
 
 			try {
 				data = JSON.parse(data);
@@ -386,7 +387,7 @@ var SocketServer = function(server){
 						tclient.post('statuses/update', {status: data.data.msg}, function (err) {
 							if(err) {
 								socket.sendJSON({type: 'systemMessage', data: 'Tweet failed'});
-								console.log(err);
+								story.error('twitter', 'Error sending Tweet', {attach: err});
 							}
 							else socket.sendJSON({type: 'systemMessage', data: 'Tweet success'});
 						});
@@ -624,7 +625,7 @@ var SocketServer = function(server){
 					}
 
 					that.room.getRoomStaff(function(err, staff){
-						console.log(err);
+						story.error('Error getting staff', {attach: err});
 						returnObj.data = staff;
 						socket.sendJSON(returnObj);
 					});
@@ -646,7 +647,7 @@ var SocketServer = function(server){
 					}
 
 					that.room.getBannedUsers(function(err, bans){
-						console.log(err);
+						story.error('Error getting banned users', {attach: err});
 						returnObj.data = bans || [];
 						socket.sendJSON(returnObj);
 					});
@@ -2003,7 +2004,7 @@ var SocketServer = function(server){
 												videos.push(vidData[i]);
 											}
 										} else {
-											console.log(err);
+											story.error('Error building playlist', {attach: err});
 										}
 
 										if (++songsAdded == data.data.cid.length) {

@@ -6,6 +6,7 @@ var log = new(require('basic-logger'))({
     showTimestamp: true,
     prefix: "MysqlDB"
 });
+var story = require('storyboard').mainStory;
 
 //Files
 var config = require('../serverconfig.js');
@@ -35,7 +36,7 @@ var MysqlDB = function(){
 
 		db.connect(function(err) {
 			if(err) {
-				log.error(err);
+				story.error('database', 'Error while connecting' ,{attach: err});
 			} else {
 				that.execute("\
 					CREATE TABLE IF NOT EXISTS `users` (\
@@ -142,7 +143,7 @@ var MysqlDB = function(){
 		db.on('error', function(err) {
 			// Log
 			if(err.code === 'PROTOCOL_CONNECTION_LOST') {
-				log.error("Connection to database lot, retrying...");
+				story.error('database',"Connection to database lot, retrying...");
 				//TODO: Reconnect to database
 			} else {
 				throw err;
@@ -517,7 +518,7 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                             code: user.data.confirmation,
                             user: inData.un,
                         }, inData.email, function(data) {
-                            console.log(data);
+                            story.info('mail', 'Send email', {attach: data});
                         });
                     }
 
@@ -676,7 +677,7 @@ MysqlDB.prototype.getUserByUid = function(uid, opts, callback) {
 
                     user.login(e.email, data, opts, function(){
                         out[e.id] = user;
-                        console.log("Initialized user " + e.email);
+                        story.info("Initialized user " + e.email);
                         if(++initialized == res.length){
                             if(uid.length == res.length) callback(null, out);
                             else callback('SomeUsersNotFound', out);
@@ -729,7 +730,7 @@ MysqlDB.prototype.userEmailExists = function(key, callback) {
 MysqlDB.prototype.logChat = function(uid, msg, special, callback) {
     this.execute("INSERT INTO `history_chat` SET ?;", { msg: msg, uid: uid, time: new Date(), special: special }, function(err, res){
         if(err){
-            log.error("Error logging chat message");
+            story.error('database', "Error logging chat message");
             if (callback) callback(err);
         } else{ 
             if (callback) callback(null, res.insertId);
@@ -741,7 +742,7 @@ MysqlDB.prototype.logChat = function(uid, msg, special, callback) {
 MysqlDB.prototype.logPM = function(from, to, msg, callback) {
     this.execute("INSERT INTO `history_pm` SET ?;", { msg: msg, from: from, to: to, time: new Date() }, function(err, res){
         if(err){
-            log.error("Error logging chat message");
+            storyerror('database', "Error logging chat message");
             if (callback) callback(err);
         } else{ 
             if (callback) callback(null, res.insertId);

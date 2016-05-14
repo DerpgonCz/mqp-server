@@ -10,6 +10,7 @@ var updateNotifier = require('update-notifier');
 var pkg = require('./package.json');
 var boxen = require('boxen');
 var chalk = require('chalk');
+var story = require('storyboard');
 
 if (!config.setup) {
     log.error("Please, setup your server by editing the 'serverconfig.js' file");
@@ -64,8 +65,7 @@ if (config.apis.musiqpad.sendLobbyStats && (!config.apis.musiqpad.key || config.
 var socketServer = new SocketServer(server);
 
 process.on('uncaughtException', function (err) {
-    console.log(err);
-    console.log(err.stack);
+    story.error('Uncaught exception', {attach: err});
     socketServer.gracefulExit();
 });
 
