@@ -160,15 +160,16 @@ MysqlDB.prototype.execute = function(query, vars, callback, trans) {
 			callback(err);
 			return;
 		}
-		
+
 		if(trans){
 		    con.beginTransaction(function(err) {
                 if (err) { callback(err); return }
-                
+
                 con.query(query, vars, function(err, rows) {
                   if(err){
                       callback(err);
                       con.rollback();
+                      story.debug('MySQL', 'Error in transaction', {attach: err});
                   } else {
                       callback(null, rows);
                       con.commit();
@@ -179,6 +180,7 @@ MysqlDB.prototype.execute = function(query, vars, callback, trans) {
 		} else {
 		    con.query(query, vars, function(err, rows){
     			callback(err, rows);
+          if(err) story.debug('MySQL', 'Error in query', {attach: err});
     			con.release();
     		});
 		}
@@ -213,7 +215,7 @@ MysqlDB.prototype.getPlaylist = function(pid, callback) {
 
 MysqlDB.prototype.createPlaylist = function(owner, name, callback) {
 	name = name.substr(0, 50);
-    
+
     var Playlist = require('./playlist');
     var pl = new Playlist();
     pl.data.owner = owner;
@@ -336,7 +338,7 @@ MysqlDB.prototype.getRoom = function(slug, callback) {
 
 MysqlDB.prototype.setRoom = function(slug, val, callback) {
     var that = this;
-    
+
     callback = callback || function(){};
 
     var outRoles = [], outBans = [], outHistory = [];
@@ -353,7 +355,7 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
         var obj = val.history[ind];
         outHistory.push([ slug, obj.user.uid, obj.song.cid, new Date(obj.start), obj.song.duration, obj.song.title, obj.votes.like, obj.votes.grab, obj.votes.dislike ]);
     }
-    
+
     var query = "DELETE FROM `roles` WHERE ?; DELETE FROM `bans` WHERE ?;DELETE FROM `history_dj` WHERE ?;";
     var params = [{ slug: slug, }, { slug: slug, }, { slug: slug, }];
 
@@ -369,16 +371,16 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
         query += "INSERT INTO `history_dj`(??) VALUES ?;";
         params.push([ 'slug', 'dj', 'cid', 'start', 'duration', 'title', 'like', 'grab', 'dislike' ], outHistory);
     }
-    
+
     that.execute(query, params, function(err, res){
         if(err){
             callback(err);
         } else {
             callback(null, res);
         }
-        
+
     }, true);
-    
+
     return that;
 };
 
@@ -732,7 +734,7 @@ MysqlDB.prototype.logChat = function(uid, msg, special, callback) {
         if(err){
             story.error('database', "Error logging chat message");
             if (callback) callback(err);
-        } else{ 
+        } else{
             if (callback) callback(null, res.insertId);
         }
     });
@@ -744,13 +746,13 @@ MysqlDB.prototype.logPM = function(from, to, msg, callback) {
         if(err){
             storyerror('database', "Error logging chat message");
             if (callback) callback(err);
-        } else{ 
+        } else{
             if (callback) callback(null, res.insertId);
         }
     });
 };
 
-MysqlDB.prototype.getConversation = function(from, to, callback) {  
+MysqlDB.prototype.getConversation = function(from, to, callback) {
     this.execute("SELECT * FROM `history_pm` WHERE (? AND ?) OR (? AND ?) ORDER BY `time` ASC LIMIT 512;", [ { from: from}, { to: to }, { from: to }, { to: from } ], function(err, res) {
         if(err){
             callback(err);
@@ -774,7 +776,7 @@ MysqlDB.prototype.getConversations = function(uid, callback) {
             var uids = [];
             for (var key in res) {
                 var otherUid = res[key].to == uid ? res[key].from : res[key].to;
-                
+
                 if (out[otherUid] === undefined) {
                     uids.push(otherUid);
                     out[otherUid] = {
@@ -785,7 +787,7 @@ MysqlDB.prototype.getConversations = function(uid, callback) {
                 }
                 out[otherUid].messages.push({ message: res[key].msg, time: res[key].time, from: res[key].from });
             }
-            
+
             if (uids.length > 0) {
                 that.getUserByUid(uids, function(err, result){
                     if (err) {
