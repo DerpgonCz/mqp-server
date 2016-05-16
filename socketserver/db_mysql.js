@@ -160,11 +160,11 @@ MysqlDB.prototype.execute = function(query, vars, callback, trans) {
 			callback(err);
 			return;
 		}
-		
+
 		if(trans){
 		    con.beginTransaction(function(err) {
                 if (err) { callback(err); return }
-                
+
                 con.query(query, vars, function(err, rows) {
                   if(err){
                       callback(err);
@@ -213,7 +213,6 @@ MysqlDB.prototype.getPlaylist = function(pid, callback) {
 
 MysqlDB.prototype.createPlaylist = function(owner, name, callback) {
 	name = name.substr(0, 50);
-    
     var Playlist = require('./playlist');
     var pl = new Playlist();
     pl.data.owner = owner;
@@ -235,7 +234,7 @@ MysqlDB.prototype.deletePlaylist = function(pid, callback) {
 
 MysqlDB.prototype.putPlaylist = function(pid, data, callback) {
     var that = this;
-
+    
     var toSave = [];
 
     //TODO: Content type support
@@ -336,7 +335,7 @@ MysqlDB.prototype.getRoom = function(slug, callback) {
 
 MysqlDB.prototype.setRoom = function(slug, val, callback) {
     var that = this;
-    
+
     callback = callback || function(){};
 
     var outRoles = [], outBans = [], outHistory = [];
@@ -353,7 +352,7 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
         var obj = val.history[ind];
         outHistory.push([ slug, obj.user.uid, obj.song.cid, new Date(obj.start), obj.song.duration, obj.song.title, obj.votes.like, obj.votes.grab, obj.votes.dislike ]);
     }
-    
+
     var query = "DELETE FROM `roles` WHERE ?; DELETE FROM `bans` WHERE ?;DELETE FROM `history_dj` WHERE ?;";
     var params = [{ slug: slug, }, { slug: slug, }, { slug: slug, }];
 
@@ -369,16 +368,16 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
         query += "INSERT INTO `history_dj`(??) VALUES ?;";
         params.push([ 'slug', 'dj', 'cid', 'start', 'duration', 'title', 'like', 'grab', 'dislike' ], outHistory);
     }
-    
+
     that.execute(query, params, function(err, res){
         if(err){
             callback(err);
         } else {
             callback(null, res);
         }
-        
+
     }, true);
-    
+
     return that;
 };
 
@@ -411,8 +410,9 @@ MysqlDB.prototype.getUserNoLogin = function(uid, callback){
     var that = this;
 
 	var User = require('./user');
+    
+	this.execute("SELECT `salt`, `lastdj`, `uptime`, `recovery`, UNIX_TIMESTAMP(`recovery_timeout`) as `recovery_timeout`, `confirmation`, `badge_top`, `badge_bottom`, `created`, `activepl`, `pw`, `un`, `id` FROM `users` WHERE ?", { id: uid, }, function(err, res){
 
-	this.execute("SELECT `salt`, `lastdj`, `uptime`, `recovery`, UNIX_TIMESTAMP(`recovery_timeout`) as `recovery_timeout`, `confirmation`, `badge_top`, `badge_bottom`, UNIX_TIMESTAMP(`created`) as `created`, `activepl`, `pw`, `un`, `id` FROM `users` WHERE ?", { id: uid, }, function(err, res){
         if (err || res.length == 0) { callback('UserNotFound'); return; }
 
         res = res[0];
@@ -429,7 +429,7 @@ MysqlDB.prototype.getUserNoLogin = function(uid, callback){
                 bottom: res.badge_bottom,
             },
             playlists: [],
-            created: res.created * 1000,
+            created: res.created,
             activepl: res.activepl,
             pw: res.pw,
             un: res.un,
@@ -708,6 +708,7 @@ MysqlDB.prototype.getUserByName = function(name, opts, callback) {
         callback = opts;
         opts = {};
     }
+
     this.execute("SELECT `id`, `email` FROM `users` WHERE ?;", { un: name, }, function(err, res){
        if(err || res.length == 0) callback('UserNotFound');
        else {
@@ -732,7 +733,7 @@ MysqlDB.prototype.logChat = function(uid, msg, special, callback) {
         if(err){
             story.error('database', "Error logging chat message");
             if (callback) callback(err);
-        } else{ 
+        } else{
             if (callback) callback(null, res.insertId);
         }
     });
@@ -744,13 +745,13 @@ MysqlDB.prototype.logPM = function(from, to, msg, callback) {
         if(err){
             storyerror('database', "Error logging chat message");
             if (callback) callback(err);
-        } else{ 
+        } else{
             if (callback) callback(null, res.insertId);
         }
     });
 };
 
-MysqlDB.prototype.getConversation = function(from, to, callback) {  
+MysqlDB.prototype.getConversation = function(from, to, callback) {
     this.execute("SELECT * FROM `history_pm` WHERE (? AND ?) OR (? AND ?) ORDER BY `time` ASC LIMIT 512;", [ { from: from}, { to: to }, { from: to }, { to: from } ], function(err, res) {
         if(err){
             callback(err);
@@ -774,7 +775,7 @@ MysqlDB.prototype.getConversations = function(uid, callback) {
             var uids = [];
             for (var key in res) {
                 var otherUid = res[key].to == uid ? res[key].from : res[key].to;
-                
+
                 if (out[otherUid] === undefined) {
                     uids.push(otherUid);
                     out[otherUid] = {
@@ -785,7 +786,7 @@ MysqlDB.prototype.getConversations = function(uid, callback) {
                 }
                 out[otherUid].messages.push({ message: res[key].msg, time: res[key].time, from: res[key].from });
             }
-            
+
             if (uids.length > 0) {
                 that.getUserByUid(uids, function(err, result){
                     if (err) {
