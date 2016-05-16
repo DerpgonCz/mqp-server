@@ -27,7 +27,7 @@ if (config.certificate && config.certificate.key && config.certificate.cert){
 
 //var server = http.createServer(app);
 
-storyboard.addListener(wsListener, {httpServer: server});
+storyboard.addListener(wsListener);
 
 app.use(function(req, res, next) {
   if(!req.secure && config.webServer.redirectHTTP) {
@@ -73,7 +73,7 @@ server.listen(config.webServer.port || process.env.PORT, config.webServer.addres
 if(server2 != null){
   server2.listen(config.webServer.redirectPort || 80, config.webServer.address || process.env.IP, function(){
     var addr2 = server2.address();
-    storyboard.mainStory.info('HTTP-WebServer', "Listening at", addr.address + ":" + addr.port);
+    storyboard.mainStory.info('HTTP-WebServer', "Listening at", addr2.address + ":" + addr2.port);
   });
 }
 
