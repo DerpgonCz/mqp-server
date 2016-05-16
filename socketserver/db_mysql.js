@@ -169,6 +169,7 @@ MysqlDB.prototype.execute = function(query, vars, callback, trans) {
                   if(err){
                       callback(err);
                       con.rollback();
+                      story.debug('MySQL', 'Error in transaction', {attach: err});
                   } else {
                       callback(null, rows);
                       con.commit();
@@ -179,6 +180,7 @@ MysqlDB.prototype.execute = function(query, vars, callback, trans) {
 		} else {
 		    con.query(query, vars, function(err, rows){
     			callback(err, rows);
+          if(err) story.debug('MySQL', 'Error in query', {attach: err});
     			con.release();
     		});
 		}
@@ -213,6 +215,7 @@ MysqlDB.prototype.getPlaylist = function(pid, callback) {
 
 MysqlDB.prototype.createPlaylist = function(owner, name, callback) {
 	name = name.substr(0, 50);
+
     var Playlist = require('./playlist');
     var pl = new Playlist();
     pl.data.owner = owner;
