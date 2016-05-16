@@ -249,7 +249,7 @@ MysqlDB.prototype.putPlaylist = function(pid, data, callback) {
     this.execute("UPDATE `playlists` SET ? WHERE ?; DELETE FROM `media` WHERE ?; INSERT INTO `media`(??) VALUES ?;", [{ name: data.name, }, { id: pid, }, [{ pid: pid, }, [ 'pid', 'cid', 'sort' ], toSave]], function(err, data) {
         if(err){ callback(err); return; }
         callback(null, data);
-    }, true);
+    });
 };
 
 //RoomDB
@@ -379,7 +379,7 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
             callback(null, res);
         }
 
-    }, true);
+    });
 
     return that;
 };
