@@ -29,6 +29,11 @@ if (config.certificate && config.certificate.key && config.certificate.cert){
 
 storyboard.addListener(wsListener);
 
+app.use(function (req, res, next) {
+  storyboard.mainStory.info('WebServer', req.ip + ' - ' + req.method + ' - ' + req.originalUrl);
+  next();
+});
+
 app.use(function(req, res, next) {
   if(!req.secure && config.webServer.redirectHTTP) {
 	  return res.redirect(['https://', req.hostname, ":", config.webServer.port || process.env.PORT, req.url].join(''));
@@ -67,7 +72,7 @@ app.get('/api/room', function(req,res){
 
 server.listen(config.webServer.port || process.env.PORT, config.webServer.address || process.env.IP, function(){
   var addr = server.address();
-  storyboard.mainStory.info('WebServer', "Listening at", addr.address + ":" + addr.port);
+  storyboard.mainStory.info('WebServer', "Listening at " + addr.address + ":" + addr.port);
 });
 
 if(server2 != null){
