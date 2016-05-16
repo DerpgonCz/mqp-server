@@ -3,6 +3,8 @@ var path = require('path');
 var http = require('http');
 var https = require('https');
 var fs = require('fs');
+var storyboard = require('storyboard');
+var wsListener = require('storyboard/lib/listeners/wsServer');
 var config = require('../serverconfig.js');
 
 
@@ -25,6 +27,7 @@ if (config.certificate && config.certificate.key && config.certificate.cert){
 
 //var server = http.createServer(app);
 
+storyboard.addListener(wsListener, {httpServer: server});
 
 app.use(function(req, res, next) {
   if(!req.secure && config.webServer.redirectHTTP) {
@@ -64,13 +67,13 @@ app.get('/api/room', function(req,res){
 
 server.listen(config.webServer.port || process.env.PORT, config.webServer.address || process.env.IP, function(){
   var addr = server.address();
-  console.log("Webserver listening at", addr.address + ":" + addr.port);
+  storyboard.mainStory.info('WebServer', "Listening at", addr.address + ":" + addr.port);
 });
 
 if(server2 != null){
   server2.listen(config.webServer.redirectPort || 80, config.webServer.address || process.env.IP, function(){
     var addr2 = server2.address();
-    console.log("HTTP Webserver listening at", addr2.address + ":" + addr2.port);
+    storyboard.mainStory.info('HTTP-WebServer', "Listening at", addr.address + ":" + addr.port);
   });
 }
 
