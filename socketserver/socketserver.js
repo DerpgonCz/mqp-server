@@ -240,7 +240,7 @@ var SocketServer = function(server){
 
 	this.wss.on("connection", function(socket){
 		var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
-
+		
 		story.info('SocketServer',ip + ' connected');
 
 		if (!that.ipRateLimit.canConnect(ip)){
@@ -254,7 +254,24 @@ var SocketServer = function(server){
 			frameCount: 0,
 			hasWarned: false,
 			ratelimitHits: 0,
+			roleInfo: {
+				currentRole: '',
+				ignoreRateLimits: false
+			},
 			canAcceptMessage: function() {
+				if (socket.user && socket.user.role) {
+					if (socket.user.role != this.roleInfo.currentRole) {
+						var role = Roles.getRole(socket.user.role);
+						if (role) {
+							this.roleInfo.currentRole = socket.user.role;
+							this.roleInfo.ignoreRateLimits = role.ignoreRateLimits ? role.ignoreRateLimits == true : false;
+						}
+					}
+					if (this.roleInfo.ignoreRateLimits) {
+						console.log('Role Ignore Rate Limit');
+						return true;
+					}
+				}
 				this.frameCount++;
 				if (this.lastReset == 0 || (this.lastReset  + 1000) < Date.now() && !this.isCooldown) {
 					this.lastReset = Date.now();
@@ -288,7 +305,7 @@ var SocketServer = function(server){
 
 		socket.on("close", function(){
 			var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
-
+			
 			story.info('SocketServer',ip + ' disconnected');
 			if(socket.user){
 				socket.user.uptime += Date.now() - socket.user.temp_uptime;
@@ -296,7 +313,7 @@ var SocketServer = function(server){
 			}
 			that.removeSock(socket);
 		});
-
+		
 		socket.on("message", function(data, flags){
 			var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
 
@@ -344,13 +361,14 @@ var SocketServer = function(server){
 				return;
 			}
 
-			// Return if unauthenticated socket or banned or restricter user tries to do anything other than signup, login, or join room.
+
+			// Return if unauthenticated socket or banned or restricted user tries to do anything other than signup, login, or join room.
 			var restricted = false;
+			//if (socket.user) { console.log(socket.user.confirmation + ' ' + (Date.now() - socket.user.created)) };
 			if((!socket.user || (socket.room && that.room.isUserBanned(socket.user.uid)) || (restricted = (Date.now() - socket.user.created) <= config.room.signupcd) || socket.user.confirmation) &&
 				['signup', 'login', 'joinRoom', 'getUsers', 'getHistory', 'getStaff', 'getBannedUsers', 'confirmation', 'recovery'].indexOf(data.type) == -1){
 
 				returnObj.data = {error: 'NotLoggedIn'};
-
 				if (socket.user) {
 					if(socket.user.confirmation){
 						returnObj.data = {error: 'EmailNotConfirmed'};
@@ -791,7 +809,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-						
+
 					if (that.room.queue.users.length >= that.room.queue.limit && !Roles.checkPermission(socket.user.role, 'djqueue.limit.bypass')){
 						returnObj.data = {
 							error: 'CannotJoinQueueOverLimit'
@@ -799,7 +817,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (that.room.queue.lock && !Roles.checkPermission(socket.user.role, 'djqueue.lock.bypass')){
 						returnObj.data = {
 							error: 'CannotJoinLockedQueue'
@@ -1150,6 +1168,13 @@ var SocketServer = function(server){
 						break;
 					}
 					var res = that.room.queue.swap(user1Sock, user2Sock);
+					if(!res.data) {
+						returnObj.data = {
+							error: 'SwappingWithCurrentDJ'
+						};
+						socket.sendJSON(returnObj);
+						break;	
+					}
 					res.data.mid = socket.user.uid;
 					returnObj.data = {
 						success: res.success
@@ -1465,7 +1490,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (!data.data.message || data.data.message == '' || typeof data.data.message != 'string') {
 						returnObj.data = {
 							error: 'EmptyMessage'
@@ -1473,13 +1498,13 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-	
+
 					that.room.sendMessage(socket, data.data.message, null, null, function(cid){
 						returnObj.data = {
 							success: true,
 							cid: cid,
 						};
-					
+
 						socket.sendJSON(returnObj);
 					});
 					
@@ -1511,7 +1536,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (!data.data.message || data.data.message == '' || typeof data.data.message != 'string') {
 						returnObj.data = {
 							error: 'EmptyMessage'
@@ -1519,7 +1544,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					returnObj.data = {
 						success: true
 					};
@@ -1571,7 +1596,7 @@ var SocketServer = function(server){
 						uid: data.data.uid
 					};
 					socket.sendJSON(returnObj);
-					
+
 					var userSock = that.room.findSocketByUid(data.data.uid);
 					if (userSock != null) {
 						userSock.sendJSON({
@@ -1584,10 +1609,10 @@ var SocketServer = function(server){
 					}
 					DB.logPM(socket.user.uid, data.data.uid, msg);
 					break;
-					
+
 				case 'getConversations':
 					/*
-				    Expected input object: 
+				    Expected input object:
 					{
 						type: 'getConversations',
 						data: {
@@ -1601,7 +1626,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
 						returnObj.data = {
 							error: 'InsufficientPermissions'
@@ -1611,7 +1636,7 @@ var SocketServer = function(server){
 					}
 					DB.getConversations(socket.user.uid, function(err, res) {
 						if (err) {
-							
+
 						} else {
 							for (var i in res) {
 								if (res[i].user && res[i].user.uid > 0){
@@ -1625,10 +1650,10 @@ var SocketServer = function(server){
 						}
 					});
 					break;
-		
+
 				case 'getPrivateConversation':
 					/*
-				    Expected input object: 
+				    Expected input object:
 					{
 						type: 'getPrivateConversation',
 						data: {
@@ -1636,7 +1661,7 @@ var SocketServer = function(server){
 						}
 					}
 					*/
-					
+
 					if (!socket.room) {
 						returnObj.data = {
 							error: 'NotInPad'
@@ -1644,7 +1669,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
 						returnObj.data = {
 							error: 'InsufficientPermissions'
@@ -1652,7 +1677,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (!data.data.uid) {
 						break;
 					}
@@ -1672,7 +1697,7 @@ var SocketServer = function(server){
 								socket.sendJSON(returnObj);
 								return;
 							}
-							
+
 							returnObj.data = {
 								user: user.getClientObj(),
 								messages: res
@@ -1681,10 +1706,10 @@ var SocketServer = function(server){
 						});
 					});
 					break;
-					
+
 				case 'markConversationRead':
 					/*
-				    Expected input object: 
+				    Expected input object:
 					{
 						type: 'markConversationRead',
 						data: {
@@ -1700,7 +1725,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
 						returnObj.data = {
 							error: 'InsufficientPermissions'
@@ -1717,7 +1742,7 @@ var SocketServer = function(server){
 					}
 					DB.markConversationRead(socket.user.uid, data.data.uid, new Date(data.data.date));
 					break;
-				
+
 				case 'broadcastMessage':
 					if (!Roles.checkPermission(socket.user.role, 'chat.broadcast')){
 						returnObj.data = {
@@ -1726,7 +1751,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (!data.data.message || typeof data.data.message != 'string'){
 						returnObj.data = {
 							error: 'PropsMissing'
@@ -1734,7 +1759,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					that.room.sendBroadcastMessage(
 						data.data.message.replace('<', '&lt;').replace('>', '&gt;')
 					);
@@ -1749,7 +1774,7 @@ var SocketServer = function(server){
 						}
 					 }
 					*/
-					
+
 					if (!data.data.query || typeof data.data.query != 'string'){
 						returnObj.data = {
 							error: 'PropsMissing'
@@ -1810,9 +1835,9 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					data.data.name = data.data.name.toString();
-					
+
 					socket.user.addPlaylist(data.data.name, function(err, pl){
 						if (err){
 							returnObj.data = {
@@ -2282,7 +2307,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					if (typeof data.data.voteType != 'string') {
 						returnObj.data = {
 							error: 'InvalidVoteType'
@@ -2290,7 +2315,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					var res = that.room.queue.vote(data.data.voteType, socket);
 
 //					if (res){
@@ -2378,7 +2403,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					YT.findChannels({
 						query: data.data.query,
 						pageToken: data.data.pageToken,
@@ -2403,7 +2428,7 @@ var SocketServer = function(server){
 					 	}
 					 }
 					*/
-					
+
 					if (typeof data.data.query != 'string') {
 						returnObj.data = {
 							error: 'InvalidQueryType'
@@ -2411,7 +2436,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					YT.findPlaylists({
 						query: data.data.query,
 						pageToken: data.data.pageToken,
@@ -2872,7 +2897,7 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					
+
 					DB.getUserByName(data.data.un, { getPlaylists: false }, function(err, user){
 						//Handle error
 						if (err){
@@ -2882,7 +2907,7 @@ var SocketServer = function(server){
 							socket.sendJSON(returnObj);
 							return;
 						}
-						
+
 						//Execute and return data
 						returnObj.data = {
 							user: user.getClientObj(),
@@ -2972,7 +2997,7 @@ var SocketServer = function(server){
 						pkg: pkg,
 						updateCheckInterval: 0
 					});
-					
+
 					returnObj.data = {
 						update: notifier.update,
 					};
