@@ -29,6 +29,8 @@ if (config.certificate && config.certificate.key && config.certificate.cert){
 
 storyboard.addListener(wsListener);
 
+app.set('trust proxy',  ['loopback', 'linklocal', 'uniquelocal']);
+
 app.use(function (req, res, next) {
   storyboard.mainStory.info('WebServer', req.ip + ' - ' + req.method + ' - ' + req.originalUrl);
   next();
